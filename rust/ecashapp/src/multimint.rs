@@ -754,7 +754,7 @@ impl Multimint {
         dbtx.commit_tx().await;
     }
 
-    async fn get_or_build_temp_client(
+    pub async fn get_or_build_temp_client(
         &self,
         invite_code: InviteCode,
     ) -> anyhow::Result<(ClientHandleArc, FederationId)> {

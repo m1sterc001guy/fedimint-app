@@ -12,7 +12,7 @@ use crate::{
         NostrRelaysKey, NostrRelaysKeyPrefix, NostrWalletConnectConfig, NostrWalletConnectKey,
         NostrWalletConnectKeyPrefix,
     },
-    error_to_flutter, federations, info_to_flutter,
+    error_to_flutter, federations, get_multimint, info_to_flutter,
     multimint::{FederationSelector, LightningSendOutcome},
     payment_preview, send,
 };
@@ -48,6 +48,7 @@ pub const DEFAULT_RELAYS: &[&str] = &[
     "wss://relay.nostr.info",
     "wss://nostr-pub.wellorder.net",
     "wss://nostr1.tunnelsats.com",
+    "wss://nos.lol",
 ];
 
 pub const NWC_SUPPORTED_METHODS: &[&str] = &["get_info", "get_balance", "pay_invoice"];
@@ -502,6 +503,62 @@ impl NostrClient {
         {
             Ok(events) => {
                 let all_events = events.to_vec();
+                let mut events = Vec::new();
+                for event in all_events {
+                    info_to_flutter(format!("Event: {event:?}")).await;
+                    match PublicFederation::parse_network(&event.tags) {
+                        Ok(network) if network == Network::Regtest => {
+                            // Skip over regtest advertisements
+                            continue;
+                        }
+                        _ => {}
+                    }
+
+                    if let Ok(public_fed) = PublicFederation::try_from(event.clone()) {
+                        events.push(public_fed);
+                        continue;
+                    }
+
+                    // If not all data is there, try to download client config using invite code
+                    let tags = event.tags;
+                    if let Ok(invite_codes) = PublicFederation::parse_invite_codes(&tags) {
+                        for invite_code in invite_codes.iter() {
+                            if let Ok(code) = InviteCode::from_str(&invite_code) {
+                                let multimint = get_multimint();
+                                let client = multimint.get_or_build_temp_client(code).await;
+                                if let Ok((client, federation_id)) = client {
+                                    let config = client.config().await;
+                                    let federation_name = config
+                                        .global
+                                        .federation_name()
+                                        .unwrap_or_default()
+                                        .to_string();
+
+                                    let wallet = client
+                                        .get_first_module::<fedimint_wallet_client::WalletClientModule>()
+                                        .expect("No wallet module present");
+                                    let network = wallet.get_network().to_string();
+
+                                    let modules =
+                                        PublicFederation::parse_modules(&tags).unwrap_or_default();
+
+                                    let public_fed = PublicFederation {
+                                        federation_name,
+                                        federation_id,
+                                        invite_codes: invite_codes.clone(),
+                                        about: None,
+                                        picture: None,
+                                        modules,
+                                        network,
+                                    };
+
+                                    events.push(public_fed);
+                                }
+                            }
+                        }
+                    }
+                }
+                /*
                 let events = all_events
                     .iter()
                     .filter_map(|event| {
@@ -516,6 +573,7 @@ impl NostrClient {
                         PublicFederation::try_from(event.clone()).ok()
                     })
                     .collect::<Vec<_>>();
+                */
 
                 info_to_flutter(format!("Public Federations: {events:?}")).await;
                 let mut public_federations = self.public_federations.write().await;
