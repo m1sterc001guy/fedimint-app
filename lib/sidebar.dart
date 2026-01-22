@@ -2,6 +2,7 @@ import 'package:ecashapp/db.dart';
 import 'package:ecashapp/fed_preview.dart';
 import 'package:ecashapp/lib.dart';
 import 'package:ecashapp/multimint.dart';
+import 'package:ecashapp/providers/peer_status_provider.dart';
 import 'package:ecashapp/providers/preferences_provider.dart';
 import 'package:ecashapp/theme.dart';
 import 'package:ecashapp/utils.dart';
@@ -15,12 +16,16 @@ class FederationPreviewData {
   String? welcomeMessage;
   List<Guardian>? guardians;
 
+  /// Federation ID as string, for use with PeerStatusProvider
+  String? federationIdStr;
+
   FederationPreviewData({
     this.balanceMsats,
     this.isLoading = true,
     this.federationImageUrl,
     this.welcomeMessage,
     this.guardians,
+    this.federationIdStr,
   });
 }
 
@@ -61,6 +66,15 @@ class FederationSidebarState extends State<FederationSidebar> {
     bool isRecovering,
   ) async {
     final data = FederationPreviewData();
+
+    // Get federation ID string for use with PeerStatusProvider
+    try {
+      data.federationIdStr = await federationIdToString(
+        federationId: fed.federationId,
+      );
+    } catch (e) {
+      AppLogger.instance.error('Failed to get federation ID string: $e');
+    }
 
     // Load balance
     if (!isRecovering) {
@@ -273,20 +287,30 @@ class FederationListItem extends StatelessWidget {
     required this.onLeaveFederation,
   });
 
-  bool get allGuardiansOnline =>
-      data.guardians != null &&
-      data.guardians!.isNotEmpty &&
-      data.guardians!.every((g) => g.version != null);
-
-  int get numOnlineGuardians =>
-      data.guardians != null
-          ? data.guardians!.where((g) => g.version != null).length
-          : 0;
-
   @override
   Widget build(BuildContext context) {
-    final numGuardians = data.guardians?.length ?? 0;
-    final thresh = data.guardians != null ? threshold(numGuardians) : 0;
+    // Use PeerStatusProvider for real-time online status if available
+    final peerStatusProvider = context.watch<PeerStatusProvider>();
+    final federationIdStr = data.federationIdStr;
+
+    // Determine peer counts - prefer real-time status from provider,
+    // fall back to guardian.version != null for initial load
+    final int numGuardians;
+    final int numOnlineGuardians;
+
+    if (federationIdStr != null &&
+        peerStatusProvider.hasStatusFor(federationIdStr)) {
+      // Use real-time status from provider
+      numGuardians = peerStatusProvider.totalPeerCount(federationIdStr);
+      numOnlineGuardians = peerStatusProvider.onlinePeerCount(federationIdStr);
+    } else {
+      // Fall back to cached guardian data
+      numGuardians = data.guardians?.length ?? 0;
+      numOnlineGuardians =
+          data.guardians?.where((g) => g.version != null).length ?? 0;
+    }
+
+    final thresh = numGuardians > 0 ? threshold(numGuardians) : 0;
     final onlineColor =
         numOnlineGuardians == numGuardians
             ? Colors.greenAccent
@@ -386,6 +410,7 @@ class FederationListItem extends StatelessWidget {
                           joinable: false,
                           guardians: data.guardians,
                           onLeaveFederation: onLeaveFederation,
+                          federationIdStr: data.federationIdStr,
                         );
                       },
                     );

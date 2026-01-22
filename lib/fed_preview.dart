@@ -1,6 +1,7 @@
 import 'package:ecashapp/db.dart';
 import 'package:ecashapp/lib.dart';
 import 'package:ecashapp/multimint.dart';
+import 'package:ecashapp/providers/peer_status_provider.dart';
 import 'package:ecashapp/providers/preferences_provider.dart';
 import 'package:ecashapp/toast.dart';
 import 'package:ecashapp/utils.dart';
@@ -19,6 +20,9 @@ class FederationPreview extends StatefulWidget {
   final VoidCallback? onLeaveFederation;
   final String? ecash;
 
+  /// Federation ID as string, for use with PeerStatusProvider
+  final String? federationIdStr;
+
   const FederationPreview({
     super.key,
     required this.fed,
@@ -29,6 +33,7 @@ class FederationPreview extends StatefulWidget {
     this.guardians,
     this.onLeaveFederation,
     this.ecash,
+    this.federationIdStr,
   });
 
   @override
@@ -43,13 +48,31 @@ class _FederationPreviewState extends State<FederationPreview> {
   @override
   void initState() {
     super.initState();
+    _updateAnimatedPercent();
+  }
 
+  void _updateAnimatedPercent() {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
 
-      final onlineCount =
-          widget.guardians?.where((g) => g.version != null).length ?? 0;
-      final totalCount = widget.guardians?.length ?? 0;
+      // Try to use real-time status from provider if available
+      final peerStatusProvider = context.read<PeerStatusProvider>();
+      final federationIdStr = widget.federationIdStr;
+
+      int onlineCount;
+      int totalCount;
+
+      if (federationIdStr != null &&
+          peerStatusProvider.hasStatusFor(federationIdStr)) {
+        // Use real-time status from provider
+        onlineCount = peerStatusProvider.onlinePeerCount(federationIdStr);
+        totalCount = peerStatusProvider.totalPeerCount(federationIdStr);
+      } else {
+        // Fall back to cached guardian data
+        onlineCount =
+            widget.guardians?.where((g) => g.version != null).length ?? 0;
+        totalCount = widget.guardians?.length ?? 0;
+      }
 
       setState(() {
         _animatedPercent = totalCount > 0 ? onlineCount / totalCount : 0.0;
@@ -353,12 +376,31 @@ class _FederationPreviewState extends State<FederationPreview> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final totalGuardians = widget.guardians?.length ?? 0;
+
+    // Use PeerStatusProvider for real-time online status if available
+    final peerStatusProvider = context.watch<PeerStatusProvider>();
+    final federationIdStr = widget.federationIdStr;
+
+    final int totalGuardians;
+    final int onlineGuardiansCount;
+
+    if (federationIdStr != null &&
+        peerStatusProvider.hasStatusFor(federationIdStr)) {
+      // Use real-time status from provider
+      totalGuardians = peerStatusProvider.totalPeerCount(federationIdStr);
+      onlineGuardiansCount = peerStatusProvider.onlinePeerCount(
+        federationIdStr,
+      );
+    } else {
+      // Fall back to cached guardian data
+      totalGuardians = widget.guardians?.length ?? 0;
+      onlineGuardiansCount =
+          widget.guardians?.where((g) => g.version != null).length ?? 0;
+    }
+
     final thresh = threshold(totalGuardians);
-    final onlineGuardians =
-        widget.guardians?.where((g) => g.version != null).toList() ?? [];
     final isFederationOnline =
-        totalGuardians > 0 && onlineGuardians.length >= thresh;
+        totalGuardians > 0 && onlineGuardiansCount >= thresh;
 
     Widget federationInfo = Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -526,7 +568,7 @@ class _FederationPreviewState extends State<FederationPreview> {
 
               _buildHealthStatusBar(
                 theme: theme,
-                onlineCount: onlineGuardians.length,
+                onlineCount: onlineGuardiansCount,
                 totalCount: totalGuardians,
                 threshold: thresh,
               ),
@@ -615,13 +657,29 @@ class _FederationPreviewState extends State<FederationPreview> {
   }
 
   Widget _buildGuardianList(int thresh, int total, bool isFederationOnline) {
+    // Get peer status provider for real-time status
+    final peerStatusProvider = context.watch<PeerStatusProvider>();
+    final federationIdStr = widget.federationIdStr;
+
     return widget.guardians != null && widget.guardians!.isNotEmpty
         ? ListView.builder(
           padding: const EdgeInsets.only(top: 8),
           itemCount: widget.guardians!.length,
           itemBuilder: (context, index) {
             final guardian = widget.guardians![index];
-            final isOnline = guardian.version != null;
+
+            // Determine online status - prefer real-time from provider,
+            // fall back to guardian.version != null
+            final bool isOnline;
+            if (federationIdStr != null &&
+                peerStatusProvider.hasStatusFor(federationIdStr)) {
+              isOnline = peerStatusProvider.isPeerOnline(
+                federationIdStr,
+                index,
+              );
+            } else {
+              isOnline = guardian.version != null;
+            }
 
             return ListTile(
               dense: true,
@@ -634,7 +692,7 @@ class _FederationPreviewState extends State<FederationPreview> {
               title: Text(guardian.name),
               subtitle:
                   isOnline
-                      ? Text('Version: ${guardian.version}')
+                      ? Text('Version: ${guardian.version ?? "Unknown"}')
                       : const Text('Offline'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,

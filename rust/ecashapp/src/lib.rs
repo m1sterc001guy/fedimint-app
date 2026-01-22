@@ -22,8 +22,9 @@ use fedimint_wallet_client::PegOutFees;
 use flutter_rust_bridge::frb;
 use futures_util::StreamExt;
 use multimint::{
-    FederationMeta, FederationSelector, LightningSendOutcome, LogLevel, Multimint,
-    MultimintCreation, MultimintEvent, PaymentPreview, Transaction, Utxo, WithdrawFeesResponse,
+    FederationMeta, FederationPeerStatus, FederationSelector, LightningSendOutcome, LogLevel,
+    Multimint, MultimintCreation, MultimintEvent, PaymentPreview, Transaction, Utxo,
+    WithdrawFeesResponse,
 };
 use nostr::{NWCConnectionInfo, NostrClient, PublicFederation};
 use serde::Serialize;
@@ -606,6 +607,26 @@ pub async fn subscribe_multimint_events(sink: StreamSink<MultimintEvent>) {
             break;
         }
     }
+}
+
+/// Subscribe to real-time peer connection status updates for a federation.
+/// The stream emits the current connection status of all peers whenever
+/// any peer's status changes.
+#[frb]
+pub async fn subscribe_peer_status(
+    sink: StreamSink<FederationPeerStatus>,
+    federation_id: FederationId,
+) -> anyhow::Result<()> {
+    let multimint = get_multimint();
+    let mut stream = Box::pin(multimint.subscribe_peer_status(federation_id).await?);
+
+    while let Some(status) = stream.next().await {
+        if sink.add(status).is_err() {
+            break;
+        }
+    }
+
+    Ok(())
 }
 
 #[frb]

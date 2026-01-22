@@ -253,6 +253,13 @@ Future<List<Utxo>> walletSummary({
 Stream<MultimintEvent> subscribeMultimintEvents() =>
     RustLib.instance.api.crateSubscribeMultimintEvents();
 
+/// Subscribe to real-time peer connection status updates for a federation.
+/// The stream emits the current connection status of all peers whenever
+/// any peer's status changes.
+Stream<FederationPeerStatus> subscribePeerStatus({
+  required FederationId federationId,
+}) => RustLib.instance.api.crateSubscribePeerStatus(federationId: federationId);
+
 Future<String> federationIdToString({required FederationId federationId}) =>
     RustLib.instance.api.crateFederationIdToString(federationId: federationId);
 
