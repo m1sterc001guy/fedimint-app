@@ -6,6 +6,7 @@ import 'package:ecashapp/models.dart';
 import 'package:ecashapp/number_pad.dart';
 import 'package:ecashapp/onchain_send.dart';
 import 'package:ecashapp/pay_preview.dart';
+import 'package:ecashapp/providers/peer_status_provider.dart';
 import 'package:ecashapp/screens/dashboard.dart';
 import 'package:ecashapp/lib.dart';
 import 'package:ecashapp/multimint.dart';
@@ -54,14 +55,19 @@ class _MyAppState extends State<MyApp> {
   Timer? _recoveryTimer;
   int _recoverySecondsRemaining = 30;
 
+  late final PeerStatusProvider _peerStatusProvider;
+
   @override
   void initState() {
     super.initState();
     _feds = widget.initialFederations;
 
+    _peerStatusProvider = PeerStatusProvider();
+
     if (_feds.isNotEmpty) {
       _selectedFederation = _feds.first.$1;
       _isRecovering = _feds.first.$2;
+      _subscribeToAllFederationPeerStatus();
     } else if (_feds.isEmpty && widget.recoverFederationInviteCodes) {
       _rejoinFederations();
     }
@@ -230,7 +236,14 @@ class _MyAppState extends State<MyApp> {
     _subscription.cancel();
     _deepLinkSubscription?.cancel();
     _recoveryTimer?.cancel();
+    _peerStatusProvider.dispose();
     super.dispose();
+  }
+
+  void _subscribeToAllFederationPeerStatus() {
+    for (final (fed, _) in _feds) {
+      _peerStatusProvider.subscribeToFederation(fed.federationId);
+    }
   }
 
   void _checkPendingDeepLink() {
@@ -272,9 +285,10 @@ class _MyAppState extends State<MyApp> {
       final selectedFed = await showFederationPicker(
         context: context,
         federations: _feds,
-        title: deepLink.type == DeepLinkType.lightning
-            ? 'Select Federation to Pay From'
-            : 'Select Federation',
+        title:
+            deepLink.type == DeepLinkType.lightning
+                ? 'Select Federation to Pay From'
+                : 'Select Federation',
       );
 
       if (selectedFed == null) {
@@ -313,10 +327,7 @@ class _MyAppState extends State<MyApp> {
                 federationId: fed.federationId,
                 bolt11: field0,
               );
-              return PaymentPreviewWidget(
-                fed: fed,
-                paymentPreview: preview,
-              );
+              return PaymentPreviewWidget(fed: fed, paymentPreview: preview);
             },
           );
           _onJoinPressed(fed, false);
@@ -329,13 +340,14 @@ class _MyAppState extends State<MyApp> {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => NumberPad(
-                fed: fed,
-                paymentType: PaymentType.lightning,
-                btcPrices: btcPrices,
-                onWithdrawCompleted: null,
-                lightningAddressOrLnurl: field0,
-              ),
+              builder:
+                  (_) => NumberPad(
+                    fed: fed,
+                    paymentType: PaymentType.lightning,
+                    btcPrices: btcPrices,
+                    onWithdrawCompleted: null,
+                    lightningAddressOrLnurl: field0,
+                  ),
             ),
           );
           break;
@@ -363,13 +375,14 @@ class _MyAppState extends State<MyApp> {
             await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => NumberPad(
-                  fed: fed,
-                  paymentType: PaymentType.onchain,
-                  btcPrices: btcPrices,
-                  onWithdrawCompleted: null,
-                  bitcoinAddress: field0,
-                ),
+                builder:
+                    (_) => NumberPad(
+                      fed: fed,
+                      paymentType: PaymentType.onchain,
+                      btcPrices: btcPrices,
+                      onWithdrawCompleted: null,
+                      bitcoinAddress: field0,
+                    ),
               ),
             );
           }
@@ -489,8 +502,11 @@ class _MyAppState extends State<MyApp> {
       }
     }
 
-    return ChangeNotifierProvider(
-      create: (_) => PreferencesProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PreferencesProvider()),
+        ChangeNotifierProvider.value(value: _peerStatusProvider),
+      ],
       child: MaterialApp(
         title: 'Ecash App',
         debugShowCheckedModeBanner: false,

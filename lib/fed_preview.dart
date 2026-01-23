@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:ecashapp/db.dart';
 import 'package:ecashapp/lib.dart';
 import 'package:ecashapp/multimint.dart';
+import 'package:ecashapp/providers/peer_status_provider.dart';
 import 'package:ecashapp/providers/preferences_provider.dart';
 import 'package:ecashapp/toast.dart';
 import 'package:ecashapp/utils.dart';
@@ -42,8 +43,6 @@ class _FederationPreviewState extends State<FederationPreview> {
   bool _showAdvanced = false;
   double _animatedPercent = 0.0;
 
-  late StreamSubscription<FederationPeerStatus> _subscription;
-
   @override
   void initState() {
     super.initState();
@@ -60,20 +59,8 @@ class _FederationPreviewState extends State<FederationPreview> {
       });
     });
 
-    final stream = subscribePeerStatus(federationId: widget.fed.federationId);
-    _subscription = stream.listen((event) async {
-      for (final peer in event.peers) {
-        final name = peer.name;
-        final online = peer.online;
-        AppLogger.instance.info("Name: $name Onling: $online");
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
+    //final peerStatusProvider = context.read<PeerStatusProvider>();
+    //peerStatusProvider.printPeerStatus(widget.fed.federationId);
   }
 
   Future<void> _onLeavePressed() async {
