@@ -151,17 +151,24 @@ pub async fn create_new_multimint(path: String, is_desktop: bool) {
 
 #[frb]
 pub async fn load_multimint(path: String, is_desktop: bool) {
+    eprintln!("[LOAD_MULTIMINT] Starting load_multimint");
     install_crypto_provider().await;
+    eprintln!("[LOAD_MULTIMINT] install_crypto_provider done");
     create_event_bus().await;
+    eprintln!("[LOAD_MULTIMINT] create_event_bus done");
     let db = get_database(path).await;
+    eprintln!("[LOAD_MULTIMINT] get_database done");
     MULTIMINT
         .get_or_init(|| async {
+            eprintln!("[LOAD_MULTIMINT] Creating Multimint...");
             Multimint::new(db.clone(), MultimintCreation::LoadExisting)
                 .await
                 .expect("Could not create multimint")
         })
         .await;
+    eprintln!("[LOAD_MULTIMINT] Multimint initialized");
     create_nostr_client(db, is_desktop).await;
+    eprintln!("[LOAD_MULTIMINT] load_multimint complete");
 }
 
 #[frb]

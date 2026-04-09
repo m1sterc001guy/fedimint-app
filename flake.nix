@@ -1,6 +1,6 @@
 {
   inputs = {
-    fedimint.url = "github:fedimint/fedimint?ref=v0.10.0";
+    fedimint.url = "github:fedimint/fedimint?ref=v0.11.0-beta.1";
     flake-utils.url = "github:numtide/flake-utils";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
   };
@@ -65,6 +65,7 @@
               	      ${old.shellHook or ""}
 
                             export LD_LIBRARY_PATH="${pkgs.zlib}/lib:$LD_LIBRARY_PATH"
+                            export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=16384
                             export NIXPKGS_ALLOW_UNFREE=1
                             export FLUTTER_SUPPRESS_ANALYTICS=true
                             export ROOT="$PWD"
