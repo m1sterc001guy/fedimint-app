@@ -52,6 +52,11 @@ pub const DEFAULT_RELAYS: &[&str] = &[
     "wss://relay.nostr.info",
     "wss://nostr-pub.wellorder.net",
     "wss://nostr1.tunnelsats.com",
+    "wss://nostr.mutinywallet.com",
+    "wss://relay.snort.social",
+    "wss://relay.primal.net",
+    "wss://relay.satoshidnc.com",
+    "wss://nos.lol",
 ];
 
 pub const NWC_SUPPORTED_METHODS: &[&str] = &["get_info", "get_balance", "pay_invoice"];
@@ -239,17 +244,19 @@ impl NostrClient {
 
     async fn get_or_insert_default_relays(db: Database) -> Vec<String> {
         let mut dbtx = db.begin_transaction().await;
-        let relays = dbtx
+        let existing: HashSet<String> = dbtx
             .find_by_prefix(&NostrRelaysKeyPrefix)
             .await
             .map(|(k, _)| k.uri)
             .collect::<Vec<_>>()
-            .await;
-        if !relays.is_empty() {
-            return relays;
-        }
+            .await
+            .into_iter()
+            .collect();
 
         for relay in DEFAULT_RELAYS {
+            if existing.contains(*relay) {
+                continue;
+            }
             dbtx.insert_new_entry(
                 &NostrRelaysKey {
                     uri: relay.to_string(),
@@ -259,7 +266,14 @@ impl NostrClient {
             .await;
         }
         dbtx.commit_tx().await;
-        DEFAULT_RELAYS.iter().map(|s| s.to_string()).collect()
+
+        let mut merged: Vec<String> = existing.into_iter().collect();
+        for relay in DEFAULT_RELAYS {
+            if !merged.iter().any(|r| r == relay) {
+                merged.push(relay.to_string());
+            }
+        }
+        merged
     }
 
     async fn broadcast_nwc_info(nostr_client: &nostr_sdk::Client, federation_id: &FederationId) {
@@ -576,6 +590,14 @@ impl NostrClient {
                     }
                 }
 
+                let federation_ids: Vec<FederationId> = deduped.keys().copied().collect();
+                let review_counts = self.fetch_federation_review_counts(&federation_ids).await;
+                for (federation_id, count) in review_counts {
+                    if let Some(fed) = deduped.get_mut(&federation_id) {
+                        fed.num_reviews = count;
+                    }
+                }
+
                 let mut public_federations = self.public_federations.write().await;
                 *public_federations = deduped.into_values().collect();
             }
@@ -583,6 +605,66 @@ impl NostrClient {
                 error_to_flutter(format!("Failed to fetch events from nostr: {e}")).await;
             }
         }
+    }
+
+    /// Fetches NIP-87 recommendation events (kind 38000) scoped to the given
+    /// federation_ids via the `#d` tag filter, matching fedimint-observer's
+    /// per-federation query pattern. Returns the count of unique reviewer
+    /// pubkeys per federation_id.
+    ///
+    /// Scoping by `#d` avoids relay-side per-kind result caps that would
+    /// otherwise truncate a broad `kind=38000` query.
+    async fn fetch_federation_review_counts(
+        &self,
+        federation_ids: &[FederationId],
+    ) -> std::collections::HashMap<FederationId, u32> {
+        let mut unique_reviewers: std::collections::HashMap<
+            FederationId,
+            HashSet<nostr_sdk::PublicKey>,
+        > = std::collections::HashMap::new();
+
+        // Chunk to stay under relays' filter-value limits.
+        const CHUNK_SIZE: usize = 100;
+        for chunk in federation_ids.chunks(CHUNK_SIZE) {
+            let filter = nostr_sdk::Filter::new()
+                .kind(nostr_sdk::Kind::from(38000))
+                .custom_tags(
+                    nostr_sdk::SingleLetterTag::lowercase(nostr_sdk::Alphabet::D),
+                    chunk.iter().map(|id| id.to_string()),
+                );
+
+            let events = match self
+                .nostr_client
+                .fetch_events(filter, Duration::from_secs(15))
+                .await
+            {
+                Ok(events) => events.to_vec(),
+                Err(e) => {
+                    error_to_flutter(format!(
+                        "Failed to fetch review events from nostr: {e}"
+                    ))
+                    .await;
+                    continue;
+                }
+            };
+
+            // Kind 38000 is parameterized-replaceable per (author, d-tag),
+            // so each (author, federation) pair contributes at most one star.
+            for event in events {
+                let Some(federation_id) = review_event_federation_id(&event) else {
+                    continue;
+                };
+                unique_reviewers
+                    .entry(federation_id)
+                    .or_default()
+                    .insert(event.pubkey);
+            }
+        }
+
+        unique_reviewers
+            .into_iter()
+            .map(|(k, v)| (k, v.len() as u32))
+            .collect()
     }
 
     pub async fn get_backup_invite_codes(&self) -> Vec<String> {
@@ -1369,6 +1451,47 @@ pub struct NWCConnectionInfo {
     pub secret: String,
 }
 
+/// Extracts the federation_id a NIP-87 kind-38000 recommendation event refers to.
+/// Prefers the `d` tag (as used by fedimint-observer); falls back to parsing
+/// the `a` tag's `38173:<pubkey>:<d-identifier>` format.
+fn review_event_federation_id(event: &nostr_sdk::Event) -> Option<FederationId> {
+    if let Some(d_tag) = event.tags.identifier() {
+        if let Ok(federation_id) = FederationId::from_str(d_tag) {
+            return Some(federation_id);
+        }
+    }
+
+    for tag in event.tags.iter() {
+        if tag.kind()
+            != nostr_sdk::TagKind::SingleLetter(nostr_sdk::SingleLetterTag::lowercase(
+                nostr_sdk::Alphabet::A,
+            ))
+        {
+            continue;
+        }
+        let Some(a_value) = tag.content() else {
+            continue;
+        };
+        let mut parts = a_value.splitn(3, ':');
+        let Some(kind_str) = parts.next() else {
+            continue;
+        };
+        if kind_str != "38173" {
+            continue;
+        }
+        if parts.next().is_none() {
+            continue;
+        }
+        if let Some(d_id) = parts.next() {
+            if let Ok(federation_id) = FederationId::from_str(d_id) {
+                return Some(federation_id);
+            }
+        }
+    }
+
+    None
+}
+
 #[derive(Clone, Eq, PartialEq, Serialize, Debug)]
 pub struct PublicFederation {
     pub federation_name: String,
@@ -1378,6 +1501,7 @@ pub struct PublicFederation {
     pub picture: Option<String>,
     pub modules: Vec<String>,
     pub network: String,
+    pub num_reviews: u32,
 }
 
 impl TryFrom<nostr_sdk::Event> for PublicFederation {
@@ -1398,6 +1522,7 @@ impl TryFrom<nostr_sdk::Event> for PublicFederation {
             picture,
             modules,
             network: network.to_string(),
+            num_reviews: 0,
         })
     }
 }

@@ -138,7 +138,8 @@ class _Discover extends State<Discover> with SingleTickerProviderStateMixin {
               return Center(child: Text(context.l10n.noPublicFederations));
             }
 
-            final federations = snapshot.data!;
+            final federations = [...snapshot.data!]
+              ..sort((a, b) => b.numReviews.compareTo(a.numReviews));
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -353,15 +354,32 @@ class _Discover extends State<Discover> with SingleTickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        context.l10n.networkLabel(
-                          federation.network == 'bitcoin'
-                              ? 'mainnet'
-                              : federation.network,
-                        ),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[400],
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            context.l10n.networkLabel(
+                              federation.network == 'bitcoin'
+                                  ? 'mainnet'
+                                  : federation.network,
+                            ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.star,
+                            size: 14,
+                            color: Colors.amber[400],
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${federation.numReviews}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                        ],
                       ),
                       if (federation.about != null &&
                           federation.about!.isNotEmpty) ...[
