@@ -12,6 +12,7 @@ import 'event_bus.dart';
 import 'fountain.dart';
 import 'frb_generated.dart';
 import 'lib.dart';
+import 'lnurl_client.dart';
 import 'multimint.dart';
 import 'nostr.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
@@ -476,6 +477,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  SafeUrl
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSafeUrl(
+    dynamic raw,
+  );
+
+  @protected
   TapRecipient
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTapRecipient(
     dynamic raw,
@@ -765,6 +772,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   double dco_decode_box_autoadd_f_64(dynamic raw);
 
   @protected
+  GuardianBitcoinStatus dco_decode_box_autoadd_guardian_bitcoin_status(
+    dynamic raw,
+  );
+
+  @protected
   InvoicePaidEvent dco_decode_box_autoadd_invoice_paid_event(dynamic raw);
 
   @protected
@@ -775,11 +787,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   NostrRecoveryPhase dco_decode_box_autoadd_nostr_recovery_phase(dynamic raw);
-
-  @protected
-  NostrWalletConnectConfig dco_decode_box_autoadd_nostr_wallet_connect_config(
-    dynamic raw,
-  );
 
   @protected
   (FederationId, DepositEventKind)
@@ -860,7 +867,34 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Guardian dco_decode_guardian(dynamic raw);
 
   @protected
+  GuardianAuditSummary dco_decode_guardian_audit_summary(dynamic raw);
+
+  @protected
+  GuardianBackupStatistics dco_decode_guardian_backup_statistics(dynamic raw);
+
+  @protected
+  GuardianBitcoinStatus dco_decode_guardian_bitcoin_status(dynamic raw);
+
+  @protected
+  GuardianHealth dco_decode_guardian_health(dynamic raw);
+
+  @protected
+  GuardianMetaProposal dco_decode_guardian_meta_proposal(dynamic raw);
+
+  @protected
+  GuardianMetaState dco_decode_guardian_meta_state(dynamic raw);
+
+  @protected
+  GuardianModuleSummary dco_decode_guardian_module_summary(dynamic raw);
+
+  @protected
+  GuardianStatusSummary dco_decode_guardian_status_summary(dynamic raw);
+
+  @protected
   int dco_decode_i_32(dynamic raw);
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
 
   @protected
   InvoicePaidEvent dco_decode_invoice_paid_event(dynamic raw);
@@ -901,10 +935,23 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Guardian> dco_decode_list_guardian(dynamic raw);
 
   @protected
+  List<GuardianMetaProposal> dco_decode_list_guardian_meta_proposal(
+    dynamic raw,
+  );
+
+  @protected
+  List<GuardianModuleSummary> dco_decode_list_guardian_module_summary(
+    dynamic raw,
+  );
+
+  @protected
   List<NostrProfile> dco_decode_list_nostr_profile(dynamic raw);
 
   @protected
   List<PeerStatus> dco_decode_list_peer_status(dynamic raw);
+
+  @protected
+  Uint16List dco_decode_list_prim_u_16_strict(dynamic raw);
 
   @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
@@ -972,9 +1019,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   NostrRecoveryPhase dco_decode_nostr_recovery_phase(dynamic raw);
 
   @protected
-  NostrWalletConnectConfig dco_decode_nostr_wallet_connect_config(dynamic raw);
-
-  @protected
   NWCConnectionInfo dco_decode_nwc_connection_info(dynamic raw);
 
   @protected
@@ -1017,6 +1061,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   double? dco_decode_opt_box_autoadd_f_64(dynamic raw);
+
+  @protected
+  GuardianBitcoinStatus? dco_decode_opt_box_autoadd_guardian_bitcoin_status(
+    dynamic raw,
+  );
 
   @protected
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
@@ -1113,13 +1162,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  (FiatCurrency, BigInt) dco_decode_record_fiat_currency_u_64(dynamic raw);
+  (bool, BigInt?) dco_decode_record_bool_opt_box_autoadd_u_64(dynamic raw);
 
   @protected
-  (NostrWalletConnectConfig, NWCConnectionInfo)
-  dco_decode_record_nostr_wallet_connect_config_nwc_connection_info(
-    dynamic raw,
-  );
+  (FiatCurrency, BigInt) dco_decode_record_fiat_currency_u_64(dynamic raw);
 
   @protected
   (ParsedText, FederationSelector)
@@ -1161,13 +1207,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (BigInt, BigInt) dco_decode_record_u_64_usize(dynamic raw);
 
   @protected
+  RecoveryModule dco_decode_recovery_module(dynamic raw);
+
+  @protected
   ReissueFees dco_decode_reissue_fees(dynamic raw);
 
   @protected
   RelayStatusKind dco_decode_relay_status_kind(dynamic raw);
-
-  @protected
-  SendGatewaySelection dco_decode_send_gateway_selection(dynamic raw);
 
   @protected
   Transaction dco_decode_transaction(dynamic raw);
@@ -1186,9 +1232,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   int dco_decode_u_8(dynamic raw);
-
-  @protected
-  U8Array32 dco_decode_u_8_array_32(dynamic raw);
 
   @protected
   void dco_decode_unit(dynamic raw);
@@ -1527,6 +1570,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  SafeUrl
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSafeUrl(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   TapRecipient
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTapRecipient(
     SseDeserializer deserializer,
@@ -1830,6 +1879,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   double sse_decode_box_autoadd_f_64(SseDeserializer deserializer);
 
   @protected
+  GuardianBitcoinStatus sse_decode_box_autoadd_guardian_bitcoin_status(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   InvoicePaidEvent sse_decode_box_autoadd_invoice_paid_event(
     SseDeserializer deserializer,
   );
@@ -1846,11 +1900,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   NostrRecoveryPhase sse_decode_box_autoadd_nostr_recovery_phase(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  NostrWalletConnectConfig sse_decode_box_autoadd_nostr_wallet_connect_config(
     SseDeserializer deserializer,
   );
 
@@ -1939,7 +1988,48 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Guardian sse_decode_guardian(SseDeserializer deserializer);
 
   @protected
+  GuardianAuditSummary sse_decode_guardian_audit_summary(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GuardianBackupStatistics sse_decode_guardian_backup_statistics(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GuardianBitcoinStatus sse_decode_guardian_bitcoin_status(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GuardianHealth sse_decode_guardian_health(SseDeserializer deserializer);
+
+  @protected
+  GuardianMetaProposal sse_decode_guardian_meta_proposal(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GuardianMetaState sse_decode_guardian_meta_state(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GuardianModuleSummary sse_decode_guardian_module_summary(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GuardianStatusSummary sse_decode_guardian_status_summary(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
   InvoicePaidEvent sse_decode_invoice_paid_event(SseDeserializer deserializer);
@@ -1986,12 +2076,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Guardian> sse_decode_list_guardian(SseDeserializer deserializer);
 
   @protected
+  List<GuardianMetaProposal> sse_decode_list_guardian_meta_proposal(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<GuardianModuleSummary> sse_decode_list_guardian_module_summary(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<NostrProfile> sse_decode_list_nostr_profile(
     SseDeserializer deserializer,
   );
 
   @protected
   List<PeerStatus> sse_decode_list_peer_status(SseDeserializer deserializer);
+
+  @protected
+  Uint16List sse_decode_list_prim_u_16_strict(SseDeserializer deserializer);
 
   @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
@@ -2067,11 +2170,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  NostrWalletConnectConfig sse_decode_nostr_wallet_connect_config(
-    SseDeserializer deserializer,
-  );
-
-  @protected
   NWCConnectionInfo sse_decode_nwc_connection_info(
     SseDeserializer deserializer,
   );
@@ -2118,6 +2216,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer);
+
+  @protected
+  GuardianBitcoinStatus? sse_decode_opt_box_autoadd_guardian_bitcoin_status(
+    SseDeserializer deserializer,
+  );
 
   @protected
   int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
@@ -2214,13 +2317,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  (FiatCurrency, BigInt) sse_decode_record_fiat_currency_u_64(
+  (bool, BigInt?) sse_decode_record_bool_opt_box_autoadd_u_64(
     SseDeserializer deserializer,
   );
 
   @protected
-  (NostrWalletConnectConfig, NWCConnectionInfo)
-  sse_decode_record_nostr_wallet_connect_config_nwc_connection_info(
+  (FiatCurrency, BigInt) sse_decode_record_fiat_currency_u_64(
     SseDeserializer deserializer,
   );
 
@@ -2268,15 +2370,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (BigInt, BigInt) sse_decode_record_u_64_usize(SseDeserializer deserializer);
 
   @protected
+  RecoveryModule sse_decode_recovery_module(SseDeserializer deserializer);
+
+  @protected
   ReissueFees sse_decode_reissue_fees(SseDeserializer deserializer);
 
   @protected
   RelayStatusKind sse_decode_relay_status_kind(SseDeserializer deserializer);
-
-  @protected
-  SendGatewaySelection sse_decode_send_gateway_selection(
-    SseDeserializer deserializer,
-  );
 
   @protected
   Transaction sse_decode_transaction(SseDeserializer deserializer);
@@ -2295,9 +2395,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
-
-  @protected
-  U8Array32 sse_decode_u_8_array_32(SseDeserializer deserializer);
 
   @protected
   void sse_decode_unit(SseDeserializer deserializer);
@@ -2694,6 +2791,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSafeUrl(
+    SafeUrl self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTapRecipient(
     TapRecipient self,
     SseSerializer serializer,
@@ -3049,6 +3153,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_guardian_bitcoin_status(
+    GuardianBitcoinStatus self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_invoice_paid_event(
     InvoicePaidEvent self,
     SseSerializer serializer,
@@ -3069,12 +3179,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_nostr_recovery_phase(
     NostrRecoveryPhase self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_nostr_wallet_connect_config(
-    NostrWalletConnectConfig self,
     SseSerializer serializer,
   );
 
@@ -3182,7 +3286,58 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_guardian(Guardian self, SseSerializer serializer);
 
   @protected
+  void sse_encode_guardian_audit_summary(
+    GuardianAuditSummary self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_guardian_backup_statistics(
+    GuardianBackupStatistics self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_guardian_bitcoin_status(
+    GuardianBitcoinStatus self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_guardian_health(
+    GuardianHealth self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_guardian_meta_proposal(
+    GuardianMetaProposal self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_guardian_meta_state(
+    GuardianMetaState self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_guardian_module_summary(
+    GuardianModuleSummary self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_guardian_status_summary(
+    GuardianStatusSummary self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
   @protected
   void sse_encode_invoice_paid_event(
@@ -3238,6 +3393,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_guardian(List<Guardian> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_guardian_meta_proposal(
+    List<GuardianMetaProposal> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_guardian_module_summary(
+    List<GuardianModuleSummary> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_nostr_profile(
     List<NostrProfile> self,
     SseSerializer serializer,
@@ -3246,6 +3413,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_peer_status(
     List<PeerStatus> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_u_16_strict(
+    Uint16List self,
     SseSerializer serializer,
   );
 
@@ -3345,12 +3518,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_nostr_wallet_connect_config(
-    NostrWalletConnectConfig self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_nwc_connection_info(
     NWCConnectionInfo self,
     SseSerializer serializer,
@@ -3407,6 +3574,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_guardian_bitcoin_status(
+    GuardianBitcoinStatus? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
@@ -3521,14 +3694,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_record_fiat_currency_u_64(
-    (FiatCurrency, BigInt) self,
+  void sse_encode_record_bool_opt_box_autoadd_u_64(
+    (bool, BigInt?) self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_record_nostr_wallet_connect_config_nwc_connection_info(
-    (NostrWalletConnectConfig, NWCConnectionInfo) self,
+  void sse_encode_record_fiat_currency_u_64(
+    (FiatCurrency, BigInt) self,
     SseSerializer serializer,
   );
 
@@ -3587,17 +3760,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_recovery_module(
+    RecoveryModule self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_reissue_fees(ReissueFees self, SseSerializer serializer);
 
   @protected
   void sse_encode_relay_status_kind(
     RelayStatusKind self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_send_gateway_selection(
-    SendGatewaySelection self,
     SseSerializer serializer,
   );
 
@@ -3621,9 +3794,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_u_8_array_32(U8Array32 self, SseSerializer serializer);
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer);
