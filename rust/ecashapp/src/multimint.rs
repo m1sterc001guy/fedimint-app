@@ -115,6 +115,10 @@ use crate::{
     FederationConfig, FederationConfigKey, FederationConfigKeyPrefix, SeedPhraseAckKey,
 };
 
+/// One day, which since fedimint v0.12 is also the ceiling: both
+/// `LightningClientModule::receive` and the gateway reject anything above
+/// `MAX_INVOICE_EXPIRY_SECS` (`60 * 60 * 24`). Raising this breaks LNv2
+/// receives.
 const DEFAULT_EXPIRY_TIME_SECS: u32 = 86400;
 const CACHE_UPDATE_INTERVAL_SECS: u64 = 30;
 const PRICE_CACHE_UPDATE_INTERVAL_SECS: u64 = 60 * 5;
@@ -771,9 +775,11 @@ fn recovery_module_for_kind(kind: &ModuleKind) -> Option<RecoveryModule> {
 ///
 /// A federation can run both the v1 and v2 module of a kind, and each recovers
 /// independently. Reporting only one of them would stall the bar partway;
-/// summing gives a single monotonic ratio. Modules that don't implement
-/// recovery report 0/0 and so contribute nothing, which is what leaves the
-/// Lightning bar empty — neither `ln` nor `lnv2` has a recovery routine.
+/// summing gives a single monotonic ratio. Only `mint`, `mintv2` and `wallet`
+/// implement recovery; since fedimint v0.12 the rest are skipped outright
+/// (`RecoveryMode::None`) rather than run through a no-op recovery, so they
+/// never report and contribute nothing — which is what leaves the Lightning
+/// bar empty, neither `ln` nor `lnv2` having a recovery routine.
 fn aggregate_recovery_progress(
     module_progress: &BTreeMap<ModuleInstanceId, (RecoveryModule, RecoveryProgress)>,
     recovery_module: RecoveryModule,
