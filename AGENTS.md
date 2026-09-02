@@ -128,7 +128,7 @@ When modifying the Rust API:
 
 ### Fedimint Integration
 
-The app uses Fedimint SDK v0.9.0 with these modules:
+The app uses Fedimint SDK v0.12.0 with these modules:
 - **fedimint-mint-client** - Ecash mint operations
 - **fedimint-ln-client** - Lightning v1 (legacy)
 - **fedimint-lnv2-client** - Lightning v2 (preferred for new gateways)
