@@ -63,3 +63,10 @@ flutter_launcher_icons:
   image_path: "assets/images/ecash-app.png"
   adaptive_icon_background: "#000000"
   adaptive_icon_foreground: "assets/images/ecash-app.png"
+  # The App Store rejects a marketing icon with an alpha channel (error 90717).
+  # iOS applies its own rounded mask, so filling the transparent corners with
+  # the artwork's own edge colour is invisible on device. Android is unaffected
+  # by these two keys, and must keep its alpha: adaptive icon foregrounds
+  # require transparency.
+  remove_alpha_ios: true
+  background_color_ios: "#4AD5FF"
