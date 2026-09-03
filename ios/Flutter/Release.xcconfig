@@ -3,3 +3,9 @@
 #include "Rust.xcconfig"
 
 RUST_PROFILE = release
+
+// Same signing hook as Debug.xcconfig — see the comment there. Without it,
+// Release and Profile have no DEVELOPMENT_TEAM and cannot sign at all, so
+// `flutter run --release` has never been runnable on a device. CI writes this
+// file from secrets to sign the archive.
+#include? "Local.xcconfig"

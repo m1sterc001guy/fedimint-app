@@ -16,6 +16,6 @@ RUST_PROFILE = release-dev
 // A free personal Apple ID works; the bundle id has to be unique to your team.
 // Without that file the build still configures, and Xcode reports the missing
 // team when you try to run on a device.
-PRODUCT_BUNDLE_IDENTIFIER = org.fedimint.ecashapp
+PRODUCT_BUNDLE_IDENTIFIER = org.fedimint.app
 
 #include? "Local.xcconfig"

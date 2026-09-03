@@ -1,0 +1,49 @@
+name: iOS Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  # Path-filtered because macos runners bill at a 10x minute multiplier. Keep
+  # this job out of branch protection's required checks while the filter is in
+  # place: a path-skipped job never reports success, so a required check would
+  # block every doc-only pull request from merging.
+  pull_request:
+    branches:
+      - '**'
+    paths:
+      - 'ios/**'
+      - 'rust/**'
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.flutter-version'
+      - 'scripts/build-rust-ios.sh'
+      - '.github/workflows/ios-build.yml'
+      - '.github/actions/ios-build/**'
+
+# A superseded pull request run is wasted macos minutes. Pushes to master are
+# never cancelled, so every commit keeps its own result.
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pull requests build the debug configuration, which links the release-dev
+      # Rust profile: the same fast path android-debug.yml takes, and the one
+      # developers exercise daily.
+      #
+      # master builds release instead. That is the only place the shipping link
+      # path runs — RUST_PROFILE = release with LTO, plus Release.xcconfig's own
+      # include chain — and discovering it broken at tag time is the expensive
+      # case. It is slower, which is why pull requests do not pay for it.
+      - uses: ./.github/actions/ios-build
+        with:
+          mode: ${{ github.event_name == 'pull_request' && 'debug' || 'release' }}

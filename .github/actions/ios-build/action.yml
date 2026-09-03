@@ -1,0 +1,347 @@
+name: "iOS Build (Rust + Flutter)"
+description: "Sets up Xcode, Rust and Flutter, builds libecashapp.a for aarch64-apple-ios, then builds the app or a signed .ipa"
+inputs:
+  mode:
+    description: "Build mode: debug or release"
+    required: true
+  with-signing:
+    description: "Sign the archive and export an .ipa. Requires the certificate/profile/team inputs."
+    required: false
+    default: "false"
+  xcode-version:
+    description: "Xcode version to select. A major-version range, so runner image updates inside that major are picked up but a new major is not."
+    required: false
+    default: "^26.0"
+  bundle-id:
+    description: "Bundle identifier the provisioning profile is issued for"
+    required: false
+    default: "org.fedimint.app"
+  dist-certificate:
+    description: "Base64-encoded Apple Distribution certificate (.p12)"
+    required: false
+  dist-certificate-password:
+    description: "Password for the .p12"
+    required: false
+  provisioning-profile:
+    description: "Base64-encoded App Store provisioning profile (.mobileprovision)"
+    required: false
+  provisioning-profile-name:
+    description: "Name of the provisioning profile, as shown in the developer portal"
+    required: false
+  team-id:
+    description: "Apple Developer team ID"
+    required: false
+
+outputs:
+  short-version:
+    description: "CFBundleShortVersionString the build was stamped with"
+    value: ${{ steps.version.outputs.short_version }}
+  version-code:
+    description: "CFBundleVersion the build was stamped with"
+    value: ${{ steps.version.outputs.version_code }}
+
+runs:
+  using: "composite"
+  steps:
+    # Pinned to a major, not left to the runner image, because the SDK is
+    # load-bearing here: rust/ecashapp/src/ios_compat.rs exists solely to define
+    # nw_path_is_ultra_constrained, which netdev calls unconditionally and Apple
+    # only ships in the iOS 26 SDK. A runner image rolling to a new major Xcode
+    # would silently change what the shipping binary links against, and the
+    # failure mode is an app that will not launch below the new deployment
+    # floor. `^26.0` still picks up 26.x image updates.
+    #
+    # setup-xcode pins by running `xcode-select -s`; it does not export
+    # DEVELOPER_DIR. That is enough for xcodebuild and flutter, but not for
+    # scripts/build-rust-ios.sh: its `env -i` re-exec drops everything, and with
+    # DEVELOPER_DIR unset it falls back to /Applications/Xcode.app — a symlink
+    # to the image default that `xcode-select -s` does not move. The Rust link
+    # path would therefore follow the runner image while everything else
+    # followed the pin. Exporting the selected path closes that gap, and
+    # build-rust-ios.sh forwards it once it validates as a real iOS-capable
+    # Xcode.
+    - name: Select Xcode
+      if: inputs.xcode-version != ''
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ inputs.xcode-version }}
+
+    - name: Export the selected Xcode
+      if: inputs.xcode-version != ''
+      shell: bash
+      run: echo "DEVELOPER_DIR=$(xcode-select -p)" >> "$GITHUB_ENV"
+
+    # macOS arm64 runners ship ~14 GB of free disk, and rust/ecashapp/target for
+    # the fedimint tree plus an ~800 MB - 1.6 GB libecashapp.a gets close to it.
+    # Logged rather than acted on: if a build ever fails on space, this is the
+    # step that says so instead of a confusing linker error.
+    - name: Show toolchain and disk
+      shell: bash
+      run: |
+        xcodebuild -version
+        echo "DEVELOPER_DIR=${DEVELOPER_DIR:-<runner default>}"
+        df -h /
+
+    - name: Read Flutter version
+      id: flutter-version
+      shell: bash
+      run: echo "version=$(cat .flutter-version)" >> $GITHUB_OUTPUT
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ steps.flutter-version.outputs.version }}
+        channel: 'stable'
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        targets: aarch64-apple-ios
+
+    # Same reasoning as the Android action: `workspaces` must name the crate
+    # directory because there is no workspace at the repo root, and
+    # scripts/build-rust-ios.sh passes --target-dir rust/ecashapp/target
+    # explicitly. Placed after the toolchain install because the cache key
+    # includes the rustc version.
+    #
+    # shared-key, not key: `key` leaves rust-cache's default job-id segment in
+    # place, which filed master's entry under ios-release-*build* and sent the
+    # tag job looking for ios-release-*testflight*. The one build that matters
+    # most was therefore always cold. shared-key drops that segment, so the tag
+    # job restores what master saved.
+    #
+    # Every ref saves, deliberately. Actions cache scoping means only entries
+    # written on the default branch are visible to all pull requests, and master
+    # builds release, so restricting saves to master left every pull request
+    # cold: the debug key had no writer. Letting pull requests write their own
+    # makes the push / fix / push loop warm from the second push onward, which
+    # is the loop that actually happens. A pull request's first push is still
+    # cold and cannot be fixed here — that would take a debug build on master,
+    # i.e. a second 10x-billed macOS job per merge.
+    #
+    # The cost is cache budget: an iOS entry runs 1-2.5 GB against a 10 GB
+    # repo-wide limit already shared with checks.yml, both android-build keys
+    # and macos-release. Eviction is least-recently-used, so several concurrent
+    # iOS pull requests will start displacing other workflows' entries. That is
+    # the knob to turn back if Android or checks start rebuilding from scratch.
+    #
+    # cache-on-failure because the loop above depends on it: rust-cache skips
+    # saving on a failed job by default, and a run that compiled all of Rust and
+    # then died in flutter/xcodebuild is precisely the run whose target
+    # directory is worth keeping.
+    - name: Cache Rust build
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: rust/ecashapp
+        shared-key: ios-${{ inputs.mode }}
+        cache-on-failure: true
+
+    - name: Cache Flutter pub
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.pub-cache
+          **/.dart_tool
+        key: ${{ runner.os }}-flutter-${{ hashFiles('pubspec.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-flutter-
+
+    # ios/Podfile.lock is committed and ios/Pods is gitignored, so the lockfile
+    # hash is the right key.
+    - name: Cache CocoaPods
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Caches/CocoaPods
+          ios/Pods
+        key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pods-
+
+    - name: Install Flutter dependencies
+      shell: bash
+      run: flutter pub get
+
+    # Documented prerequisite of scripts/build-rust-ios.sh. rust-cache covers
+    # ~/.cargo/bin, so this is a one-time cost per cache generation.
+    - name: Install bindgen-cli
+      shell: bash
+      run: command -v bindgen >/dev/null || cargo install --locked bindgen-cli
+
+    # Must run before anything Xcode touches: ios/Flutter/Rust.xcconfig
+    # -force_loads this .a, so the link fails on a missing path if it is absent.
+    # The script re-execs itself in a scrubbed environment; that is deliberate and
+    # load-bearing, see the comment at the top of it.
+    - name: Build Rust library for iOS
+      shell: bash
+      run: |
+        if [[ "${{ inputs.mode }}" == "debug" ]]; then
+          RUST_PROFILE="release-dev"
+        else
+          RUST_PROFILE="release"
+        fi
+        ./scripts/build-rust-ios.sh device "$RUST_PROFILE"
+        ls -lh "rust/ecashapp/target/aarch64-apple-ios/$RUST_PROFILE/libecashapp.a"
+
+    - name: Import signing certificate
+      if: inputs.with-signing == 'true'
+      shell: bash
+      env:
+        DIST_CERTIFICATE: ${{ inputs.dist-certificate }}
+        DIST_CERTIFICATE_PASSWORD: ${{ inputs.dist-certificate-password }}
+        PROVISIONING_PROFILE: ${{ inputs.provisioning-profile }}
+      run: |
+        CERTIFICATE_PATH=$RUNNER_TEMP/ios_distribution.p12
+        KEYCHAIN_PATH=$RUNNER_TEMP/ios-signing.keychain-db
+        KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+        echo "$DIST_CERTIFICATE" | base64 --decode > "$CERTIFICATE_PATH"
+
+        security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security import "$CERTIFICATE_PATH" -P "$DIST_CERTIFICATE_PASSWORD" \
+          -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+        # `codesign:` on top of what macos-release.yml lists: the archive is signed
+        # by xcodebuild invoking codesign, and without that entry the key access
+        # blocks on a UI prompt no one can answer.
+        security set-key-partition-list -S apple-tool:,apple:,codesign: \
+          -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        # login.keychain stays in the search list so the Apple intermediate
+        # certificates from the runner image remain visible.
+        security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
+
+        # Xcode reads profiles from one of these two directories depending on
+        # version. Writing both costs nothing and avoids a version-dependent
+        # "no profile matches" failure.
+        for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" \
+                   "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+          mkdir -p "$dir"
+          echo "$PROVISIONING_PROFILE" | base64 --decode > "$dir/build.mobileprovision"
+        done
+
+        rm -f "$CERTIFICATE_PATH"
+
+    # ios/Flutter/Local.xcconfig is gitignored and is the hook Debug.xcconfig
+    # documents for developer signing config; Release.xcconfig includes it too now,
+    # so this is how signing reaches the archive without any of it living in git.
+    #
+    # CODE_SIGN_IDENTITY is set twice on purpose: project.pbxproj carries a
+    # project-level CODE_SIGN_IDENTITY[sdk=iphoneos*] = "iPhone Developer", and
+    # matching the condition is the reliable way to override it.
+    - name: Write signing configuration
+      if: inputs.with-signing == 'true'
+      shell: bash
+      run: |
+        cat > ios/Flutter/Local.xcconfig <<EOF
+        DEVELOPMENT_TEAM = ${{ inputs.team-id }}
+        CODE_SIGN_STYLE = Manual
+        CODE_SIGN_IDENTITY = Apple Distribution
+        CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
+        PROVISIONING_PROFILE_SPECIFIER = ${{ inputs.provisioning-profile-name }}
+        EOF
+
+    # Rewrites ios/Flutter/Generated.xcconfig and runs pod install. Has to come
+    # after the Rust build, because pod install reads the xcconfigs that reference
+    # the static library. See the comment in scripts/run-ios-device.sh.
+    #
+    # --no-codesign is required even though this signs nothing. Flutter resolves
+    # a signing identity before honoring --config-only, and short-circuits only
+    # when DEVELOPMENT_TEAM is already in the resolved build settings. On the
+    # unsigned path there is no Local.xcconfig to supply one, so it falls through
+    # to `security find-identity` against an empty runner keychain and exits 1.
+    # Nothing is lost on the signed path either: the identity it would resolve is
+    # passed as an xcodebuild argument, and --config-only never invokes a build.
+    # Archive signing comes from Local.xcconfig plus ExportOptions.plist during
+    # `flutter build ipa` below.
+    - name: Configure iOS project
+      shell: bash
+      run: flutter build ios --config-only --${{ inputs.mode }} --no-codesign
+
+    - name: Compute version
+      if: inputs.with-signing == 'true'
+      id: version
+      shell: bash
+      run: |
+        FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+        VERSION_NAME=${FULL_VERSION%%+*}
+        VERSION_CODE=${FULL_VERSION##*+}
+
+        if [[ "$VERSION_CODE" == "$VERSION_NAME" ]]; then
+          echo "::error::pubspec.yaml version is missing +versionCode. Use scripts/release.sh to create releases."
+          exit 1
+        fi
+
+        # App Store Connect rejects a CFBundleShortVersionString that is not a
+        # plain numeric X.Y.Z, so the tag's pre-release suffix has to be stripped.
+        # CFBundleVersion keeps the full version code, which scripts/release.sh
+        # already makes monotonic across a release train (rc.1 -> 110001,
+        # final -> 110090), which is what App Store Connect requires.
+        SHORT_VERSION=$(echo "$VERSION_NAME" | sed -E 's/-(rc\.[0-9]+|alpha|beta).*$//')
+
+        echo "Marketing version: $SHORT_VERSION (from $VERSION_NAME), build $VERSION_CODE"
+        echo "short_version=$SHORT_VERSION" >> $GITHUB_OUTPUT
+        echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+
+    # Generated rather than committed so the team ID and profile name stay out of
+    # the repository.
+    - name: Write export options
+      if: inputs.with-signing == 'true'
+      shell: bash
+      run: |
+        cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <!-- "app-store-connect" since Xcode 15.3; the "app-store" spelling it
+               replaced is still accepted but deprecated. Safe to use the current
+               name because xcode-version pins a major above that. Revisit if
+               that pin is ever moved below 15.3. -->
+          <key>method</key>
+          <string>app-store-connect</string>
+          <key>teamID</key>
+          <string>${{ inputs.team-id }}</string>
+          <key>signingStyle</key>
+          <string>manual</string>
+          <key>signingCertificate</key>
+          <string>Apple Distribution</string>
+          <key>provisioningProfiles</key>
+          <dict>
+            <key>${{ inputs.bundle-id }}</key>
+            <string>${{ inputs.provisioning-profile-name }}</string>
+          </dict>
+          <key>uploadSymbols</key>
+          <true/>
+          <key>stripSwiftSymbols</key>
+          <true/>
+          <key>destination</key>
+          <string>export</string>
+        </dict>
+        </plist>
+        EOF
+
+    - name: Build iOS app
+      if: inputs.with-signing != 'true'
+      shell: bash
+      run: flutter build ios --${{ inputs.mode }} --no-codesign
+
+    - name: Build signed IPA
+      if: inputs.with-signing == 'true'
+      shell: bash
+      run: |
+        flutter build ipa --release \
+          --build-name="${{ steps.version.outputs.short_version }}" \
+          --build-number="${{ steps.version.outputs.version_code }}" \
+          --export-options-plist "$RUNNER_TEMP/ExportOptions.plist"
+        ls -lh build/ios/ipa/
+
+    - name: Clean up signing material
+      if: always()
+      shell: bash
+      run: |
+        security delete-keychain "$RUNNER_TEMP/ios-signing.keychain-db" 2>/dev/null || true
+        rm -f ios/Flutter/Local.xcconfig "$RUNNER_TEMP/ExportOptions.plist"
+        rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/build.mobileprovision" \
+              "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/build.mobileprovision"

@@ -170,6 +170,13 @@ CI runs the Flutter tests on every PR (`.github/workflows/test.yml`), and the Ru
 tests plus `cargo fmt --check`, `cargo clippy -- -D warnings`, `dart format`, and the
 translation checks in `.github/workflows/checks.yml`.
 
+iOS is covered by `.github/workflows/ios-build.yml`: the debug configuration on
+pull requests touching `ios/`, `rust/`, `lib/` or the pubspec, and the release
+configuration on master. It is a build gate only — there are no iOS tests,
+because simulator builds are deliberately unsupported (see
+`ios/Flutter/Rust.xcconfig`). Tagged releases go to TestFlight via
+`.github/workflows/ios-release.yml`; see `docs/release-process.md`.
+
 ### Build Verification
 
 **Do not run `just build-debug-android` yourself.** The Docker-based Android build

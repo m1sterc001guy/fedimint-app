@@ -1,0 +1,96 @@
+name: iOS Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  testflight:
+    runs-on: macos-latest
+    timeout-minutes: 120
+    steps:
+      # Before the ~40 minute build, for the same reason macos-release.yml checks
+      # first: a tag that builds, silently skips the upload and reports a green
+      # check is worse than a tag that fails loudly in 10 seconds.
+      - name: Require signing secrets
+        env:
+          IOS_DIST_CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERTIFICATE_BASE64 }}
+          IOS_DIST_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          missing=()
+          for name in IOS_DIST_CERTIFICATE_BASE64 IOS_DIST_CERTIFICATE_PASSWORD \
+                      IOS_PROVISIONING_PROFILE_BASE64 IOS_PROVISIONING_PROFILE_NAME \
+                      IOS_TEAM_ID APP_STORE_CONNECT_KEY_ID \
+                      APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_PRIVATE_KEY; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing iOS signing secrets: ${missing[*]}"
+            exit 1
+          fi
+          echo "All iOS signing secrets present"
+
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/ios-build
+        id: build
+        with:
+          mode: release
+          with-signing: true
+          dist-certificate: ${{ secrets.IOS_DIST_CERTIFICATE_BASE64 }}
+          dist-certificate-password: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
+          provisioning-profile: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          provisioning-profile-name: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+          team-id: ${{ secrets.IOS_TEAM_ID }}
+
+      # Nothing is attached to the GitHub Release: an App Store-signed .ipa only
+      # installs through TestFlight, so a download link on the release page would
+      # be an artifact nobody can run. Workflow artifacts exist so a build can be
+      # inspected or re-uploaded without re-running the whole job.
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa-${{ steps.build.outputs.short-version }}+${{ steps.build.outputs.version-code }}
+          path: build/ios/ipa/*.ipa
+
+      # Kept because App Store Connect only symbolicates crash reports it has
+      # dSYMs for, and the archive is deleted with the runner.
+      - name: Upload dSYMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-dsyms-${{ steps.build.outputs.short-version }}+${{ steps.build.outputs.version-code }}
+          path: build/ios/archive/Runner.xcarchive/dSYMs
+          if-no-files-found: warn
+
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          # altool resolves the key by ID out of this directory; there is no flag
+          # to hand it a path.
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s\n' "$APP_STORE_CONNECT_PRIVATE_KEY" \
+            > "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+
+          IPA=$(ls build/ios/ipa/*.ipa | head -1)
+          echo "Uploading $IPA"
+          xcrun altool --validate-app -f "$IPA" -t ios \
+            --apiKey "$APP_STORE_CONNECT_KEY_ID" --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$APP_STORE_CONNECT_KEY_ID" --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Clean up API key
+        if: always()
+        run: rm -rf "$HOME/.appstoreconnect"

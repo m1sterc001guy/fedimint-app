@@ -11,7 +11,8 @@
   - Commits and creates signed tag `vX.Y.Z-rc.N`
 - Verify build: `just build-linux` and `flutter analyze`
 - Push: `git push upstream releases/vX.Y && git push upstream vX.Y.Z-rc.N`
-- Verify GitHub release created with APK and AppImage
+- Verify GitHub release created with APK, AppImage and DMG
+- Verify the iOS build reached TestFlight (see [iOS / TestFlight](#ios-testflight))
 
 ## Final Release
 
@@ -27,7 +28,8 @@
   - Prompts for F-Droid changelog (creates `metadata/en-US/changelogs/VCODE.txt`)
   - Commits and creates signed tag `vX.Y.Z`
 - Push: `git push upstream releases/vX.Y && git push upstream vX.Y.Z`
-- Verify GitHub release created with APK and AppImage
+- Verify GitHub release created with APK, AppImage and DMG
+- Verify the iOS build reached TestFlight (see [iOS / TestFlight](#ios-testflight))
 
 ## Post-Release
 
@@ -37,6 +39,37 @@
   - `pubspec.yaml`: `version: X.(Y+1).0-alpha`
   - `rust/ecashapp/Cargo.toml`: `version = "X.(Y+1).0-alpha"`
   - Include the appstream release entry cherry-pick
+
+## iOS / TestFlight
+
+Pushing a `v*` tag runs `.github/workflows/ios-release.yml`, which builds the
+Rust static library for `aarch64-apple-ios`, archives and signs the app, exports
+an `.ipa`, and uploads it to App Store Connect. There is nothing to attach to the
+GitHub release page: an App Store-signed `.ipa` only installs through TestFlight,
+so the `.ipa` and its dSYMs are kept as workflow artifacts instead.
+
+The workflow checks every signing secret before it starts building, so a tag
+either produces a TestFlight build or fails immediately — it never goes green
+having skipped the upload.
+
+Version numbers come from the same `pubspec.yaml` line as Android:
+
+- `CFBundleVersion` is the version code (`0.11.0-rc.1+110001` -> `110001`).
+- `CFBundleShortVersionString` is the version with the pre-release suffix
+  stripped (`0.11.0-rc.1` -> `0.11.0`), because App Store Connect rejects a
+  marketing version that is not plain `X.Y.Z`.
+
+Because the version code already increases across a release train, RCs and the
+final release can share a marketing version without App Store Connect
+complaining.
+
+After the upload, TestFlight distribution is manual: the build has to finish
+processing, then be assigned to a tester group. External testing needs Apple's
+review; internal testing does not.
+
+The signing credentials, and the one-time Apple Developer Program setup needed
+before the first tagged iOS release, are held outside this repository. The
+workflow itself is the reference for which secrets it reads.
 
 ## F-Droid Testing
 

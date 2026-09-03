@@ -24,14 +24,27 @@ set -euo pipefail
 # (CARGO_TARGET_DIR, LIBCLANG_PATH, CC, RUSTFLAGS, ...), so re-exec with an
 # allowlisted environment instead. Nothing from the caller survives except the
 # few things cargo and Xcode genuinely need.
+#
+# DEVELOPER_DIR is the one value read from the caller, so CI can pin an Xcode
+# with actions/setup-xcode, which works by setting it. It is validated first,
+# not trusted: `nix develop` also exports a DEVELOPER_DIR, pointing at its own
+# macOS-only SDK, and forwarding that makes every iOS build fail on a confusing
+# "xcrun cannot find the iOS SDK".
 if [ "${ECASHAPP_IOS_CLEAN_ENV:-}" != "1" ]; then
+  # Accept a caller-provided DEVELOPER_DIR only if it actually points at an
+  # Xcode. `nix develop` exports one for its own macOS SDK, which has no
+  # Platforms/iPhoneOS.platform, and forwarding that breaks every iOS build.
+  developer_dir="/Applications/Xcode.app/Contents/Developer"
+  if [ -d "${DEVELOPER_DIR:-}/Platforms/iPhoneOS.platform" ]; then
+    developer_dir="$DEVELOPER_DIR"
+  fi
   exec /usr/bin/env -i \
     ECASHAPP_IOS_CLEAN_ENV=1 \
     HOME="$HOME" \
     USER="${USER:-$(id -un)}" \
     TERM="${TERM:-dumb}" \
     PATH="/usr/bin:/bin:/usr/sbin:/sbin:${HOME}/.cargo/bin:/opt/homebrew/bin:/usr/local/bin" \
-    DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer" \
+    DEVELOPER_DIR="$developer_dir" \
     "$0" "$@"
 fi
 
