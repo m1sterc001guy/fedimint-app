@@ -44,7 +44,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.9.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 246665849;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 2087727281;
 
 // Section: executor
 
@@ -15418,6 +15418,647 @@ fn wire__crate__set_show_msats_impl(
         },
     )
 }
+fn wire__crate__statechain_claim_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_claim",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::app_error::EcashAppError>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok = crate::statechain_claim(&*api_federation_id_guard).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain_deposit_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_deposit",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            let api_exit_address = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::app_error::EcashAppError>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok =
+                            crate::statechain_deposit(&*api_federation_id_guard, api_exit_address)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain_exit_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_exit",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            let api_coin_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::app_error::EcashAppError>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok =
+                            crate::statechain_exit(&*api_federation_id_guard, api_coin_id).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain_exit_state_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_exit_state",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            let api_coin_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::app_error::EcashAppError>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok =
+                            crate::statechain_exit_state(&*api_federation_id_guard, api_coin_id)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain_fund_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_fund",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            let api_coin_id = <String>::sse_decode(&mut deserializer);
+            let api_funding_tx_hex = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::app_error::EcashAppError>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok = crate::statechain_fund(
+                            &*api_federation_id_guard,
+                            api_coin_id,
+                            api_funding_tx_hex,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain_list_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_list",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::app_error::EcashAppError>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok = crate::statechain_list(&*api_federation_id_guard).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain_peg_out_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_peg_out",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            let api_coin_id = <String>::sse_decode(&mut deserializer);
+            let api_address = <String>::sse_decode(&mut deserializer);
+            let api_fee_sats = <u64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::app_error::EcashAppError>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok = crate::statechain_peg_out(
+                            &*api_federation_id_guard,
+                            api_coin_id,
+                            api_address,
+                            api_fee_sats,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain_receive_address_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_receive_address",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            let api_exit_address = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::app_error::EcashAppError>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok = crate::statechain_receive_address(
+                            &*api_federation_id_guard,
+                            api_exit_address,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain_send_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_send",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            let api_coin_id = <String>::sse_decode(&mut deserializer);
+            let api_address = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::app_error::EcashAppError>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok = crate::statechain_send(
+                            &*api_federation_id_guard,
+                            api_coin_id,
+                            api_address,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain_supported_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statechain_supported",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_federation_id = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let mut api_federation_id_guard = None;
+                        let decode_indices_ =
+                            flutter_rust_bridge::for_generated::lockable_compute_decode_order(
+                                vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                    &api_federation_id,
+                                    0,
+                                    false,
+                                )],
+                            );
+                        for i in decode_indices_ {
+                            match i {
+                                0 => {
+                                    api_federation_id_guard =
+                                        Some(api_federation_id.lockable_decode_async_ref().await)
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_federation_id_guard = api_federation_id_guard.unwrap();
+                        let output_ok = Result::<_, ()>::Ok(
+                            crate::statechain_supported(&*api_federation_id_guard).await,
+                        )?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__statechain__statecoin_claim_default_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "statecoin_claim_default",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok =
+                        Result::<_, ()>::Ok(crate::statechain::StatecoinClaim::default())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__subscribe_deposits_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -17648,6 +18289,18 @@ impl SseDecode for Vec<(u64, usize)> {
     }
 }
 
+impl SseDecode for Vec<crate::statechain::Statecoin> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = vec![];
+        for idx_ in 0..len_ {
+            ans_.push(<crate::statechain::Statecoin>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::multimint::Transaction> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -18019,6 +18672,19 @@ impl SseDecode for Option<crate::multimint::GuardianBitcoinStatus> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<crate::multimint::GuardianBitcoinStatus>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::statechain::StatecoinHolding> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::statechain::StatecoinHolding>::sse_decode(
                 deserializer,
             ));
         } else {
@@ -18435,6 +19101,129 @@ impl SseDecode for crate::multimint::RelayStatusKind {
             1 => crate::multimint::RelayStatusKind::Connected,
             2 => crate::multimint::RelayStatusKind::Failed,
             _ => unreachable!("Invalid variant for RelayStatusKind: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::statechain::Statecoin {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coinId = <String>::sse_decode(deserializer);
+        let mut var_amountSats = <Option<u64>>::sse_decode(deserializer);
+        let mut var_status = <crate::statechain::StatecoinStatus>::sse_decode(deserializer);
+        let mut var_holding =
+            <Option<crate::statechain::StatecoinHolding>>::sse_decode(deserializer);
+        let mut var_exitAddress = <Option<String>>::sse_decode(deserializer);
+        let mut var_exitTimelock = <Option<u32>>::sse_decode(deserializer);
+        return crate::statechain::Statecoin {
+            coin_id: var_coinId,
+            amount_sats: var_amountSats,
+            status: var_status,
+            holding: var_holding,
+            exit_address: var_exitAddress,
+            exit_timelock: var_exitTimelock,
+        };
+    }
+}
+
+impl SseDecode for crate::statechain::StatecoinClaim {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_claimed = <Vec<String>>::sse_decode(deserializer);
+        let mut var_failed = <Vec<String>>::sse_decode(deserializer);
+        return crate::statechain::StatecoinClaim {
+            claimed: var_claimed,
+            failed: var_failed,
+        };
+    }
+}
+
+impl SseDecode for crate::statechain::StatecoinDeposit {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_coinId = <String>::sse_decode(deserializer);
+        let mut var_address = <String>::sse_decode(deserializer);
+        return crate::statechain::StatecoinDeposit {
+            coin_id: var_coinId,
+            address: var_address,
+        };
+    }
+}
+
+impl SseDecode for crate::statechain::StatecoinExit {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_nodeTxid = <String>::sse_decode(deserializer);
+        let mut var_exitTxid = <String>::sse_decode(deserializer);
+        let mut var_timelock = <u32>::sse_decode(deserializer);
+        return crate::statechain::StatecoinExit {
+            node_txid: var_nodeTxid,
+            exit_txid: var_exitTxid,
+            timelock: var_timelock,
+        };
+    }
+}
+
+impl SseDecode for crate::statechain::StatecoinExitState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut tag_ = <i32>::sse_decode(deserializer);
+        match tag_ {
+            0 => {
+                return crate::statechain::StatecoinExitState::AwaitingNodeConfirmation;
+            }
+            1 => {
+                let mut var_blocksRemaining = <u32>::sse_decode(deserializer);
+                return crate::statechain::StatecoinExitState::Timelocked {
+                    blocks_remaining: var_blocksRemaining,
+                };
+            }
+            2 => {
+                return crate::statechain::StatecoinExitState::Ready;
+            }
+            3 => {
+                return crate::statechain::StatecoinExitState::ExitBroadcast;
+            }
+            4 => {
+                return crate::statechain::StatecoinExitState::Completed;
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+
+impl SseDecode for crate::statechain::StatecoinHolding {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::statechain::StatecoinHolding::Owned,
+            1 => crate::statechain::StatecoinHolding::Sent,
+            2 => crate::statechain::StatecoinHolding::PeggedOut,
+            _ => unreachable!("Invalid variant for StatecoinHolding: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::statechain::StatecoinStatus {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::statechain::StatecoinStatus::KeyGen,
+            1 => crate::statechain::StatecoinStatus::AwaitingFunding,
+            2 => crate::statechain::StatecoinStatus::Unconfirmed,
+            3 => crate::statechain::StatecoinStatus::Active,
+            4 => crate::statechain::StatecoinStatus::Sending,
+            5 => crate::statechain::StatecoinStatus::AwaitingClaim,
+            6 => crate::statechain::StatecoinStatus::PeggingOut,
+            7 => crate::statechain::StatecoinStatus::Exiting,
+            8 => crate::statechain::StatecoinStatus::Closed,
+            9 => crate::statechain::StatecoinStatus::Invalid,
+            10 => crate::statechain::StatecoinStatus::Unknown,
+            _ => unreachable!("Invalid variant for StatecoinStatus: {}", inner),
         };
     }
 }
@@ -19181,18 +19970,31 @@ fn pde_ffi_dispatcher_primary_impl(
         276 => wire__crate__set_pin_code_impl(port, ptr, rust_vec_len, data_len),
         277 => wire__crate__set_require_pin_for_spending_impl(port, ptr, rust_vec_len, data_len),
         278 => wire__crate__set_show_msats_impl(port, ptr, rust_vec_len, data_len),
-        279 => wire__crate__subscribe_deposits_impl(port, ptr, rust_vec_len, data_len),
-        280 => wire__crate__subscribe_guardian_sessions_impl(port, ptr, rust_vec_len, data_len),
-        281 => wire__crate__subscribe_multimint_events_impl(port, ptr, rust_vec_len, data_len),
-        282 => wire__crate__subscribe_peer_status_impl(port, ptr, rust_vec_len, data_len),
-        283 => wire__crate__subscribe_recovery_progress_impl(port, ptr, rust_vec_len, data_len),
-        284 => wire__crate__sync_contacts_impl(port, ptr, rust_vec_len, data_len),
-        285 => wire__crate__transactions_impl(port, ptr, rust_vec_len, data_len),
-        286 => wire__crate__verify_nip05_impl(port, ptr, rust_vec_len, data_len),
-        287 => wire__crate__verify_pin_impl(port, ptr, rust_vec_len, data_len),
-        288 => wire__crate__wallet_summary_impl(port, ptr, rust_vec_len, data_len),
-        289 => wire__crate__withdraw_to_address_impl(port, ptr, rust_vec_len, data_len),
-        290 => wire__crate__word_list_impl(port, ptr, rust_vec_len, data_len),
+        279 => wire__crate__statechain_claim_impl(port, ptr, rust_vec_len, data_len),
+        280 => wire__crate__statechain_deposit_impl(port, ptr, rust_vec_len, data_len),
+        281 => wire__crate__statechain_exit_impl(port, ptr, rust_vec_len, data_len),
+        282 => wire__crate__statechain_exit_state_impl(port, ptr, rust_vec_len, data_len),
+        283 => wire__crate__statechain_fund_impl(port, ptr, rust_vec_len, data_len),
+        284 => wire__crate__statechain_list_impl(port, ptr, rust_vec_len, data_len),
+        285 => wire__crate__statechain_peg_out_impl(port, ptr, rust_vec_len, data_len),
+        286 => wire__crate__statechain_receive_address_impl(port, ptr, rust_vec_len, data_len),
+        287 => wire__crate__statechain_send_impl(port, ptr, rust_vec_len, data_len),
+        288 => wire__crate__statechain_supported_impl(port, ptr, rust_vec_len, data_len),
+        289 => {
+            wire__crate__statechain__statecoin_claim_default_impl(port, ptr, rust_vec_len, data_len)
+        }
+        290 => wire__crate__subscribe_deposits_impl(port, ptr, rust_vec_len, data_len),
+        291 => wire__crate__subscribe_guardian_sessions_impl(port, ptr, rust_vec_len, data_len),
+        292 => wire__crate__subscribe_multimint_events_impl(port, ptr, rust_vec_len, data_len),
+        293 => wire__crate__subscribe_peer_status_impl(port, ptr, rust_vec_len, data_len),
+        294 => wire__crate__subscribe_recovery_progress_impl(port, ptr, rust_vec_len, data_len),
+        295 => wire__crate__sync_contacts_impl(port, ptr, rust_vec_len, data_len),
+        296 => wire__crate__transactions_impl(port, ptr, rust_vec_len, data_len),
+        297 => wire__crate__verify_nip05_impl(port, ptr, rust_vec_len, data_len),
+        298 => wire__crate__verify_pin_impl(port, ptr, rust_vec_len, data_len),
+        299 => wire__crate__wallet_summary_impl(port, ptr, rust_vec_len, data_len),
+        300 => wire__crate__withdraw_to_address_impl(port, ptr, rust_vec_len, data_len),
+        301 => wire__crate__word_list_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -21327,6 +22129,174 @@ impl flutter_rust_bridge::IntoIntoDart<crate::multimint::RelayStatusKind>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::statechain::Statecoin {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin_id.into_into_dart().into_dart(),
+            self.amount_sats.into_into_dart().into_dart(),
+            self.status.into_into_dart().into_dart(),
+            self.holding.into_into_dart().into_dart(),
+            self.exit_address.into_into_dart().into_dart(),
+            self.exit_timelock.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::statechain::Statecoin {}
+impl flutter_rust_bridge::IntoIntoDart<crate::statechain::Statecoin>
+    for crate::statechain::Statecoin
+{
+    fn into_into_dart(self) -> crate::statechain::Statecoin {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::statechain::StatecoinClaim {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.claimed.into_into_dart().into_dart(),
+            self.failed.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::statechain::StatecoinClaim
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::statechain::StatecoinClaim>
+    for crate::statechain::StatecoinClaim
+{
+    fn into_into_dart(self) -> crate::statechain::StatecoinClaim {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::statechain::StatecoinDeposit {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.coin_id.into_into_dart().into_dart(),
+            self.address.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::statechain::StatecoinDeposit
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::statechain::StatecoinDeposit>
+    for crate::statechain::StatecoinDeposit
+{
+    fn into_into_dart(self) -> crate::statechain::StatecoinDeposit {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::statechain::StatecoinExit {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.node_txid.into_into_dart().into_dart(),
+            self.exit_txid.into_into_dart().into_dart(),
+            self.timelock.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::statechain::StatecoinExit
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::statechain::StatecoinExit>
+    for crate::statechain::StatecoinExit
+{
+    fn into_into_dart(self) -> crate::statechain::StatecoinExit {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::statechain::StatecoinExitState {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            crate::statechain::StatecoinExitState::AwaitingNodeConfirmation => {
+                [0.into_dart()].into_dart()
+            }
+            crate::statechain::StatecoinExitState::Timelocked { blocks_remaining } => {
+                [1.into_dart(), blocks_remaining.into_into_dart().into_dart()].into_dart()
+            }
+            crate::statechain::StatecoinExitState::Ready => [2.into_dart()].into_dart(),
+            crate::statechain::StatecoinExitState::ExitBroadcast => [3.into_dart()].into_dart(),
+            crate::statechain::StatecoinExitState::Completed => [4.into_dart()].into_dart(),
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::statechain::StatecoinExitState
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::statechain::StatecoinExitState>
+    for crate::statechain::StatecoinExitState
+{
+    fn into_into_dart(self) -> crate::statechain::StatecoinExitState {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::statechain::StatecoinHolding {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Owned => 0.into_dart(),
+            Self::Sent => 1.into_dart(),
+            Self::PeggedOut => 2.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::statechain::StatecoinHolding
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::statechain::StatecoinHolding>
+    for crate::statechain::StatecoinHolding
+{
+    fn into_into_dart(self) -> crate::statechain::StatecoinHolding {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::statechain::StatecoinStatus {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::KeyGen => 0.into_dart(),
+            Self::AwaitingFunding => 1.into_dart(),
+            Self::Unconfirmed => 2.into_dart(),
+            Self::Active => 3.into_dart(),
+            Self::Sending => 4.into_dart(),
+            Self::AwaitingClaim => 5.into_dart(),
+            Self::PeggingOut => 6.into_dart(),
+            Self::Exiting => 7.into_dart(),
+            Self::Closed => 8.into_dart(),
+            Self::Invalid => 9.into_dart(),
+            Self::Unknown => 10.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::statechain::StatecoinStatus
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::statechain::StatecoinStatus>
+    for crate::statechain::StatecoinStatus
+{
+    fn into_into_dart(self) -> crate::statechain::StatecoinStatus {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::multimint::Transaction {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -22875,6 +23845,16 @@ impl SseEncode for Vec<(u64, usize)> {
     }
 }
 
+impl SseEncode for Vec<crate::statechain::Statecoin> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::statechain::Statecoin>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::multimint::Transaction> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -23201,6 +24181,16 @@ impl SseEncode for Option<crate::multimint::GuardianBitcoinStatus> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::multimint::GuardianBitcoinStatus>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::statechain::StatecoinHolding> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::statechain::StatecoinHolding>::sse_encode(value, serializer);
         }
     }
 }
@@ -23562,6 +24552,112 @@ impl SseEncode for crate::multimint::RelayStatusKind {
                 crate::multimint::RelayStatusKind::Connecting => 0,
                 crate::multimint::RelayStatusKind::Connected => 1,
                 crate::multimint::RelayStatusKind::Failed => 2,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::statechain::Statecoin {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.coin_id, serializer);
+        <Option<u64>>::sse_encode(self.amount_sats, serializer);
+        <crate::statechain::StatecoinStatus>::sse_encode(self.status, serializer);
+        <Option<crate::statechain::StatecoinHolding>>::sse_encode(self.holding, serializer);
+        <Option<String>>::sse_encode(self.exit_address, serializer);
+        <Option<u32>>::sse_encode(self.exit_timelock, serializer);
+    }
+}
+
+impl SseEncode for crate::statechain::StatecoinClaim {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<String>>::sse_encode(self.claimed, serializer);
+        <Vec<String>>::sse_encode(self.failed, serializer);
+    }
+}
+
+impl SseEncode for crate::statechain::StatecoinDeposit {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.coin_id, serializer);
+        <String>::sse_encode(self.address, serializer);
+    }
+}
+
+impl SseEncode for crate::statechain::StatecoinExit {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.node_txid, serializer);
+        <String>::sse_encode(self.exit_txid, serializer);
+        <u32>::sse_encode(self.timelock, serializer);
+    }
+}
+
+impl SseEncode for crate::statechain::StatecoinExitState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        match self {
+            crate::statechain::StatecoinExitState::AwaitingNodeConfirmation => {
+                <i32>::sse_encode(0, serializer);
+            }
+            crate::statechain::StatecoinExitState::Timelocked { blocks_remaining } => {
+                <i32>::sse_encode(1, serializer);
+                <u32>::sse_encode(blocks_remaining, serializer);
+            }
+            crate::statechain::StatecoinExitState::Ready => {
+                <i32>::sse_encode(2, serializer);
+            }
+            crate::statechain::StatecoinExitState::ExitBroadcast => {
+                <i32>::sse_encode(3, serializer);
+            }
+            crate::statechain::StatecoinExitState::Completed => {
+                <i32>::sse_encode(4, serializer);
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+
+impl SseEncode for crate::statechain::StatecoinHolding {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::statechain::StatecoinHolding::Owned => 0,
+                crate::statechain::StatecoinHolding::Sent => 1,
+                crate::statechain::StatecoinHolding::PeggedOut => 2,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::statechain::StatecoinStatus {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::statechain::StatecoinStatus::KeyGen => 0,
+                crate::statechain::StatecoinStatus::AwaitingFunding => 1,
+                crate::statechain::StatecoinStatus::Unconfirmed => 2,
+                crate::statechain::StatecoinStatus::Active => 3,
+                crate::statechain::StatecoinStatus::Sending => 4,
+                crate::statechain::StatecoinStatus::AwaitingClaim => 5,
+                crate::statechain::StatecoinStatus::PeggingOut => 6,
+                crate::statechain::StatecoinStatus::Exiting => 7,
+                crate::statechain::StatecoinStatus::Closed => 8,
+                crate::statechain::StatecoinStatus::Invalid => 9,
+                crate::statechain::StatecoinStatus::Unknown => 10,
                 _ => {
                     unimplemented!("");
                 }

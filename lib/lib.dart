@@ -12,6 +12,7 @@ import 'multimint.dart';
 import 'nostr.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
+import 'statechain.dart';
 part 'lib.freezed.dart';
 
 // These functions are ignored because they are not marked as `pub`: `create_event_bus`, `create_nostr_client`, `error_to_flutter`, `get_database`, `get_db`, `get_multimint`, `get_nostr_client`, `get_pin_manager`, `get_recovery_relays`, `info_to_flutter`, `nwc_limit_msats`, `parse_ecash`, `payment_error_to_flutter`, `verify_current_pin`, `write_nwc_limits`
@@ -813,6 +814,86 @@ Future<List<Contact>> paginateSearchContacts({
   cursorCreatedAt: cursorCreatedAt,
   cursorNpub: cursorNpub,
   limit: limit,
+);
+
+/// Whether the federation runs the statechain module.
+Future<bool> statechainSupported({required FederationId federationId}) =>
+    RustLib.instance.api.crateStatechainSupported(federationId: federationId);
+
+/// Creates a statecoin whose exit transactions pay to `exit_address`. Fund it
+/// with [`statechain_fund`], not by broadcasting a payment to its address.
+Future<StatecoinDeposit> statechainDeposit({
+  required FederationId federationId,
+  required String exitAddress,
+}) => RustLib.instance.api.crateStatechainDeposit(
+  federationId: federationId,
+  exitAddress: exitAddress,
+);
+
+/// Co-signs the coin's backup transactions for a signed, not yet broadcast
+/// funding transaction and then broadcasts it. Returns the funding txid.
+Future<String> statechainFund({
+  required FederationId federationId,
+  required String coinId,
+  required String fundingTxHex,
+}) => RustLib.instance.api.crateStatechainFund(
+  federationId: federationId,
+  coinId: coinId,
+  fundingTxHex: fundingTxHex,
+);
+
+Future<String> statechainReceiveAddress({
+  required FederationId federationId,
+  required String exitAddress,
+}) => RustLib.instance.api.crateStatechainReceiveAddress(
+  federationId: federationId,
+  exitAddress: exitAddress,
+);
+
+Future<void> statechainSend({
+  required FederationId federationId,
+  required String coinId,
+  required String address,
+}) => RustLib.instance.api.crateStatechainSend(
+  federationId: federationId,
+  coinId: coinId,
+  address: address,
+);
+
+Future<StatecoinClaim> statechainClaim({required FederationId federationId}) =>
+    RustLib.instance.api.crateStatechainClaim(federationId: federationId);
+
+Future<List<Statecoin>> statechainList({required FederationId federationId}) =>
+    RustLib.instance.api.crateStatechainList(federationId: federationId);
+
+/// Cooperatively pegs a coin out. Returns the peg-out txid.
+Future<String> statechainPegOut({
+  required FederationId federationId,
+  required String coinId,
+  required String address,
+  required BigInt feeSats,
+}) => RustLib.instance.api.crateStatechainPegOut(
+  federationId: federationId,
+  coinId: coinId,
+  address: address,
+  feeSats: feeSats,
+);
+
+/// Starts (or resumes) a unilateral exit without the guardians.
+Future<StatecoinExit> statechainExit({
+  required FederationId federationId,
+  required String coinId,
+}) => RustLib.instance.api.crateStatechainExit(
+  federationId: federationId,
+  coinId: coinId,
+);
+
+Future<StatecoinExitState> statechainExitState({
+  required FederationId federationId,
+  required String coinId,
+}) => RustLib.instance.api.crateStatechainExitState(
+  federationId: federationId,
+  coinId: coinId,
 );
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ClientConfig>>

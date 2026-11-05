@@ -1226,20 +1226,22 @@ impl WalletHandler {
     }
 }
 
+/// Points the app at a local esplora on regtest, which has no public explorer.
+/// Devimint allocates its esplora port dynamically, so a local federation is
+/// reached with e.g. `ECASH_APP_REGTEST_ESPLORA_URL=http://127.0.0.1:$FM_PORT_ESPLORA`.
+const REGTEST_ESPLORA_URL_ENV: &str = "ECASH_APP_REGTEST_ESPLORA_URL";
+
 /// Resolves the esplora/mempool.space API base URL for the given network.
 ///
-/// Panicking is the intent for anything not listed: regtest has no public
-/// explorer and has to be pointed at a local instance by hand, and the remaining
-/// networks are not supported. Both are configuration errors rather than
-/// conditions the app can recover from at runtime.
-fn mempool_api_url(network: bitcoin::Network) -> String {
+/// Panicking is the intent for anything not listed: the remaining networks are
+/// not supported, which is a configuration error rather than a condition the
+/// app can recover from at runtime.
+pub(crate) fn mempool_api_url(network: bitcoin::Network) -> String {
     match network {
         bitcoin::Network::Bitcoin => "https://mempool.space/api".to_string(),
         bitcoin::Network::Signet => "https://mutinynet.com/api".to_string(),
-        bitcoin::Network::Regtest => {
-            "http://127.0.0.1:16249".to_string()
-            //panic!("Regtest requires manually setting the connection params")
-        }
+        bitcoin::Network::Regtest => std::env::var(REGTEST_ESPLORA_URL_ENV)
+            .unwrap_or_else(|_| "http://127.0.0.1:16249".to_string()),
         network => {
             panic!("{network} is not a supported network")
         }

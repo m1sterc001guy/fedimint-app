@@ -17,6 +17,7 @@ mod net;
 mod nostr;
 mod parse;
 mod pin;
+mod statechain;
 mod tap_transfer;
 mod wallet;
 mod words;
@@ -69,6 +70,9 @@ use crate::db::{
 use crate::frb_generated::StreamSink;
 use crate::multimint::{DepositEventKind, FedimintGateway, LNAddressStatus, PeerStatus};
 use crate::pin::PinManager;
+use crate::statechain::{
+    Statecoin, StatecoinClaim, StatecoinDeposit, StatecoinExit, StatecoinExitState,
+};
 use crate::words::{ADJECTIVES, NOUNS};
 
 static MULTIMINT: OnceCell<Multimint> = OnceCell::const_new();
@@ -1620,5 +1624,105 @@ pub async fn paginate_search_contacts(
 
     nostr
         .paginate_search_contacts(&query, cursor, limit as usize)
+        .await
+}
+
+/// Whether the federation runs the statechain module.
+#[frb]
+pub async fn statechain_supported(federation_id: &FederationId) -> bool {
+    get_multimint().statechain_supported(federation_id).await
+}
+
+/// Creates a statecoin whose exit transactions pay to `exit_address`. Fund it
+/// with [`statechain_fund`], not by broadcasting a payment to its address.
+#[frb]
+pub async fn statechain_deposit(
+    federation_id: &FederationId,
+    exit_address: String,
+) -> Result<StatecoinDeposit, EcashAppError> {
+    get_multimint()
+        .statechain_deposit(federation_id, exit_address)
+        .await
+}
+
+/// Co-signs the coin's backup transactions for a signed, not yet broadcast
+/// funding transaction and then broadcasts it. Returns the funding txid.
+#[frb]
+pub async fn statechain_fund(
+    federation_id: &FederationId,
+    coin_id: String,
+    funding_tx_hex: String,
+) -> Result<String, EcashAppError> {
+    get_multimint()
+        .statechain_fund(federation_id, coin_id, funding_tx_hex)
+        .await
+}
+
+#[frb]
+pub async fn statechain_receive_address(
+    federation_id: &FederationId,
+    exit_address: String,
+) -> Result<String, EcashAppError> {
+    get_multimint()
+        .statechain_receive_address(federation_id, exit_address)
+        .await
+}
+
+#[frb]
+pub async fn statechain_send(
+    federation_id: &FederationId,
+    coin_id: String,
+    address: String,
+) -> Result<(), EcashAppError> {
+    get_multimint()
+        .statechain_send(federation_id, coin_id, address)
+        .await
+}
+
+#[frb]
+pub async fn statechain_claim(
+    federation_id: &FederationId,
+) -> Result<StatecoinClaim, EcashAppError> {
+    get_multimint().statechain_claim(federation_id).await
+}
+
+#[frb]
+pub async fn statechain_list(
+    federation_id: &FederationId,
+) -> Result<Vec<Statecoin>, EcashAppError> {
+    get_multimint().statechain_list(federation_id).await
+}
+
+/// Cooperatively pegs a coin out. Returns the peg-out txid.
+#[frb]
+pub async fn statechain_peg_out(
+    federation_id: &FederationId,
+    coin_id: String,
+    address: String,
+    fee_sats: u64,
+) -> Result<String, EcashAppError> {
+    get_multimint()
+        .statechain_peg_out(federation_id, coin_id, address, fee_sats)
+        .await
+}
+
+/// Starts (or resumes) a unilateral exit without the guardians.
+#[frb]
+pub async fn statechain_exit(
+    federation_id: &FederationId,
+    coin_id: String,
+) -> Result<StatecoinExit, EcashAppError> {
+    get_multimint()
+        .statechain_exit(federation_id, coin_id)
+        .await
+}
+
+#[frb]
+pub async fn statechain_exit_state(
+    federation_id: &FederationId,
+    coin_id: String,
+) -> Result<StatecoinExitState, EcashAppError> {
+    get_multimint()
+        .statechain_exit_state(federation_id, coin_id)
         .await
 }

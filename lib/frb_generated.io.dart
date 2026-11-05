@@ -16,6 +16,7 @@ import 'lnurl_client.dart';
 import 'multimint.dart';
 import 'nostr.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
+import 'statechain.dart';
 import 'tap_transfer.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
@@ -848,6 +849,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ReissueFees dco_decode_box_autoadd_reissue_fees(dynamic raw);
 
   @protected
+  StatecoinHolding dco_decode_box_autoadd_statecoin_holding(dynamic raw);
+
+  @protected
   int dco_decode_box_autoadd_u_32(dynamic raw);
 
   @protected
@@ -1029,6 +1033,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<(BigInt, BigInt)> dco_decode_list_record_u_64_usize(dynamic raw);
 
   @protected
+  List<Statecoin> dco_decode_list_statecoin(dynamic raw);
+
+  @protected
   List<Transaction> dco_decode_list_transaction(dynamic raw);
 
   @protected
@@ -1106,6 +1113,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GuardianBitcoinStatus? dco_decode_opt_box_autoadd_guardian_bitcoin_status(
     dynamic raw,
   );
+
+  @protected
+  StatecoinHolding? dco_decode_opt_box_autoadd_statecoin_holding(dynamic raw);
 
   @protected
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
@@ -1254,6 +1264,27 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   RelayStatusKind dco_decode_relay_status_kind(dynamic raw);
+
+  @protected
+  Statecoin dco_decode_statecoin(dynamic raw);
+
+  @protected
+  StatecoinClaim dco_decode_statecoin_claim(dynamic raw);
+
+  @protected
+  StatecoinDeposit dco_decode_statecoin_deposit(dynamic raw);
+
+  @protected
+  StatecoinExit dco_decode_statecoin_exit(dynamic raw);
+
+  @protected
+  StatecoinExitState dco_decode_statecoin_exit_state(dynamic raw);
+
+  @protected
+  StatecoinHolding dco_decode_statecoin_holding(dynamic raw);
+
+  @protected
+  StatecoinStatus dco_decode_statecoin_status(dynamic raw);
 
   @protected
   Transaction dco_decode_transaction(dynamic raw);
@@ -2001,6 +2032,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ReissueFees sse_decode_box_autoadd_reissue_fees(SseDeserializer deserializer);
 
   @protected
+  StatecoinHolding sse_decode_box_autoadd_statecoin_holding(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
@@ -2216,6 +2252,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<Statecoin> sse_decode_list_statecoin(SseDeserializer deserializer);
+
+  @protected
   List<Transaction> sse_decode_list_transaction(SseDeserializer deserializer);
 
   @protected
@@ -2299,6 +2338,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GuardianBitcoinStatus? sse_decode_opt_box_autoadd_guardian_bitcoin_status(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  StatecoinHolding? sse_decode_opt_box_autoadd_statecoin_holding(
     SseDeserializer deserializer,
   );
 
@@ -2457,6 +2501,29 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   RelayStatusKind sse_decode_relay_status_kind(SseDeserializer deserializer);
+
+  @protected
+  Statecoin sse_decode_statecoin(SseDeserializer deserializer);
+
+  @protected
+  StatecoinClaim sse_decode_statecoin_claim(SseDeserializer deserializer);
+
+  @protected
+  StatecoinDeposit sse_decode_statecoin_deposit(SseDeserializer deserializer);
+
+  @protected
+  StatecoinExit sse_decode_statecoin_exit(SseDeserializer deserializer);
+
+  @protected
+  StatecoinExitState sse_decode_statecoin_exit_state(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  StatecoinHolding sse_decode_statecoin_holding(SseDeserializer deserializer);
+
+  @protected
+  StatecoinStatus sse_decode_statecoin_status(SseDeserializer deserializer);
 
   @protected
   Transaction sse_decode_transaction(SseDeserializer deserializer);
@@ -3331,6 +3398,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_statecoin_holding(
+    StatecoinHolding self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
 
   @protected
@@ -3596,6 +3669,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_statecoin(
+    List<Statecoin> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_transaction(
     List<Transaction> self,
     SseSerializer serializer,
@@ -3704,6 +3783,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_guardian_bitcoin_status(
     GuardianBitcoinStatus? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_statecoin_holding(
+    StatecoinHolding? self,
     SseSerializer serializer,
   );
 
@@ -3897,6 +3982,42 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_relay_status_kind(
     RelayStatusKind self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_statecoin(Statecoin self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_statecoin_claim(
+    StatecoinClaim self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_statecoin_deposit(
+    StatecoinDeposit self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_statecoin_exit(StatecoinExit self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_statecoin_exit_state(
+    StatecoinExitState self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_statecoin_holding(
+    StatecoinHolding self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_statecoin_status(
+    StatecoinStatus self,
     SseSerializer serializer,
   );
 

@@ -1404,6 +1404,7 @@ impl Multimint {
         modules.attach(WalletV2Init);
         modules.attach(fedimint_lnv2_client::LightningClientInit::default());
         modules.attach(MetaClientInit);
+        modules.attach(fedimint_statechain_client::StatechainClientInit);
 
         let clients = Arc::new(RwLock::new(BTreeMap::new()));
 
