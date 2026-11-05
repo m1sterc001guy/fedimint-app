@@ -16,8 +16,8 @@ use fedimint_core::{
 };
 use fedimint_eventlog::Event;
 use fedimint_wallet_client::{
-    api::WalletFederationApi, client_db::TweakIdx, DepositStateV2, PegOutFees, WalletClientModule,
-    WalletOperationMeta, WalletOperationMetaVariant, WithdrawState,
+    api::WalletFederationApi, client_db::TweakIdx, DepositStateV2, PegInError, PegOutFees,
+    WalletClientModule, WalletOperationMeta, WalletOperationMetaVariant, WithdrawState,
 };
 use fedimint_walletv2_client::{
     events::ReceivePaymentEvent as V2ReceivePaymentEvent, FinalReceiveOperationState,
@@ -178,8 +178,8 @@ impl WalletHandler {
 
         let data = match wallet_module.get_pegin_tweak_idx(tweak_idx).await {
             Ok(d) => d,
-            Err(e) if e.to_string().contains("TweakIdx not found") => return Ok(()),
-            Err(e) => return Err(e),
+            Err(PegInError::TweakIdxNotFound { .. }) => return Ok(()),
+            Err(e) => return Err(e.into()),
         };
 
         let mut updates = wallet_module

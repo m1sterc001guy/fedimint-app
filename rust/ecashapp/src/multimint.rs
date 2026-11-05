@@ -1487,10 +1487,8 @@ impl Multimint {
             .await;
         for (id, _) in configs {
             let client_db = self.get_client_database(&id.id);
-            let connectors = ConnectorRegistry::build_from_client_defaults()
-                .bind()
-                .await?;
-            let mut client_builder = Client::builder().await?;
+            let connectors = ConnectorRegistry::build_from_client_defaults().bind().await;
+            let mut client_builder = Client::builder().await;
             client_builder.with_module_inits(self.modules.clone());
             let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&self.mnemonic);
             let client = client_builder
@@ -3247,16 +3245,14 @@ impl Multimint {
         tasks: &TaskGroup,
     ) -> anyhow::Result<ClientHandleArc> {
         info_to_flutter(format!("Building new client. type: {client_type}")).await;
-        let connectors = ConnectorRegistry::build_from_client_defaults()
-            .bind()
-            .await?;
+        let connectors = ConnectorRegistry::build_from_client_defaults().bind().await;
         let client_db = match client_type {
             ClientType::Temporary => MemDatabase::new().into(),
             _ => self.get_client_database(federation_id),
         };
 
         let global_root_secret = Bip39RootSecretStrategy::<12>::to_root_secret(&self.mnemonic);
-        let mut client_builder = Client::builder().await?;
+        let mut client_builder = Client::builder().await;
         client_builder.with_module_inits(self.modules.clone());
 
         // A join usually follows a preview of the same federation, which has
@@ -3286,7 +3282,7 @@ impl Multimint {
                                 config,
                                 invite_code.api_secret(),
                             )
-                            .await?
+                            .await
                     }
                     None => {
                         client_builder
@@ -3337,13 +3333,13 @@ impl Multimint {
                                 "Client is not initialized, using the previewed config...",
                             )
                             .await;
-                            client_builder
+                            Ok(client_builder
                                 .preview_with_existing_config(
                                     connectors.clone(),
                                     config,
                                     invite_code.api_secret(),
                                 )
-                                .await
+                                .await)
                         }
                         None => {
                             info_to_flutter(
@@ -3553,7 +3549,7 @@ impl Multimint {
             .client
             .clone();
         info_to_flutter("Waiting for all active state machines...").await;
-        new_client.wait_for_all_active_state_machines().await?;
+        new_client.wait_for_all_active_state_machines().await;
 
         // Every recovery passes through here once it has finished, and the
         // balance at this point is exactly what it restored: the state machines
@@ -3760,7 +3756,7 @@ impl Multimint {
                     |amount: Amount| routing_info.send_fee_minimum.add_to(amount.msats),
                     |contract: Amount| lnv2.send_fee_quote(contract),
                 )
-                .await
+                .await?
                 .ok_or_else(too_low)?
             } else {
                 lnv2.spendable_amount(balance, Some(gateway)).await?
@@ -3782,7 +3778,7 @@ impl Multimint {
                     |amount: Amount| amount,
                     |contract: Amount| lnv1.send_fee_quote(contract),
                 )
-                .await
+                .await?
                 .ok_or_else(too_low)?
             } else {
                 // Quote against the picked gateway's announcement. If it isn't
@@ -4600,6 +4596,12 @@ impl Multimint {
             LightningOperationMeta::LnurlReceive(receive) => {
                 receive.contract.commitment.amount.msats
             }
+            // The app never creates HTLC operations, so it has no amount to
+            // report for one.
+            LightningOperationMeta::CreateHtlc(_)
+            | LightningOperationMeta::ClaimHtlc(_)
+            | LightningOperationMeta::RefundHtlc(_)
+            | LightningOperationMeta::CancelHtlc(_) => 0,
         }
     }
 
@@ -4964,6 +4966,12 @@ impl Multimint {
                                     _ => None,
                                 }
                             }
+                            // The app never creates HTLC operations and has no
+                            // transaction kind to show one as.
+                            LightningOperationMeta::CreateHtlc(_)
+                            | LightningOperationMeta::ClaimHtlc(_)
+                            | LightningOperationMeta::RefundHtlc(_)
+                            | LightningOperationMeta::CancelHtlc(_) => None,
                         }
                     }
                     "ln" => {
@@ -7441,15 +7449,13 @@ impl Multimint {
             .invite_code(peer.into())
             .await
             .ok_or(anyhow!("Peer does not exist"))?;
-        let connectors = ConnectorRegistry::build_from_client_defaults()
-            .bind()
-            .await?;
-        DynGlobalApi::new_admin(
+        let connectors = ConnectorRegistry::build_from_client_defaults().bind().await;
+        Ok(DynGlobalApi::new_admin(
             connectors,
             peer.into(),
             invite.url(),
             invite.api_secret().as_deref(),
-        )
+        ))
     }
 
     /// Verify guardian admin credentials against the `auth` endpoint, which
@@ -7976,10 +7982,11 @@ fn read_meta_string(custom_meta: &serde_json::Value, key: &str) -> Option<String
 /// — i.e. the fee the federation actually charges for that amount, not the fee
 /// at `requested`. The two differ when the (step-valued) fee moves between
 /// iterations; `fee` is the realized one, so callers can display it truthfully.
-async fn solve_gross_for_net<F, Fut>(requested: u64, quote: F) -> anyhow::Result<(u64, u64)>
+async fn solve_gross_for_net<F, Fut, E>(requested: u64, quote: F) -> anyhow::Result<(u64, u64)>
 where
     F: Fn(Amount) -> Fut,
-    Fut: std::future::Future<Output = anyhow::Result<FeeQuote>>,
+    Fut: std::future::Future<Output = Result<FeeQuote, E>>,
+    E: Into<anyhow::Error>,
 {
     let mut gross = requested;
     let mut fee = 0;
@@ -7987,7 +7994,8 @@ where
     // since the fee is tiny relative to the amount.
     for _ in 0..64 {
         fee = quote(Amount::from_msats(gross))
-            .await?
+            .await
+            .map_err(Into::into)?
             .total()
             .get_bitcoin()
             .msats;
