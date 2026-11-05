@@ -880,10 +880,19 @@ Future<String> statechainPegOut({
 );
 
 /// Starts (or resumes) a unilateral exit without the guardians.
-Future<StatecoinExit> statechainExit({
+Future<StatecoinBackups> statechainExit({
   required FederationId federationId,
   required String coinId,
 }) => RustLib.instance.api.crateStatechainExit(
+  federationId: federationId,
+  coinId: coinId,
+);
+
+/// The signed backup transactions of a coin we own, not broadcast.
+Future<StatecoinBackups> statechainBackups({
+  required FederationId federationId,
+  required String coinId,
+}) => RustLib.instance.api.crateStatechainBackups(
   federationId: federationId,
   coinId: coinId,
 );

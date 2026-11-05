@@ -71,7 +71,7 @@ use crate::frb_generated::StreamSink;
 use crate::multimint::{DepositEventKind, FedimintGateway, LNAddressStatus, PeerStatus};
 use crate::pin::PinManager;
 use crate::statechain::{
-    Statecoin, StatecoinClaim, StatecoinDeposit, StatecoinExit, StatecoinExitState,
+    Statecoin, StatecoinBackups, StatecoinClaim, StatecoinDeposit, StatecoinExitState,
 };
 use crate::words::{ADJECTIVES, NOUNS};
 
@@ -1711,9 +1711,20 @@ pub async fn statechain_peg_out(
 pub async fn statechain_exit(
     federation_id: &FederationId,
     coin_id: String,
-) -> Result<StatecoinExit, EcashAppError> {
+) -> Result<StatecoinBackups, EcashAppError> {
     get_multimint()
         .statechain_exit(federation_id, coin_id)
+        .await
+}
+
+/// The signed backup transactions of a coin we own, not broadcast.
+#[frb]
+pub async fn statechain_backups(
+    federation_id: &FederationId,
+    coin_id: String,
+) -> Result<StatecoinBackups, EcashAppError> {
+    get_multimint()
+        .statechain_backups(federation_id, coin_id)
         .await
 }
 

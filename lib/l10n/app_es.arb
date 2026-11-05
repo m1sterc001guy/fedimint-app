@@ -703,5 +703,113 @@
 
   "federationExpiryFindFederation": "Buscar una federación",
 
-  "federationExpiryJoinSuccessor": "Unirse a la federación sucesora"
+  "federationExpiryJoinSuccessor": "Unirse a la federación sucesora",
+
+  "statecoin": "Statecoin",
+
+  "statecoins": "Statecoins",
+
+  "statecoinsEmpty": "Aún no tienes statecoins. Deposita bitcoin o recibe un statecoin de otra billetera.",
+
+  "statecoinDeposit": "Depositar",
+
+  "statecoinExitAddress": "Dirección de salida",
+
+  "statecoinExitAddressHint": "Dirección de bitcoin a la que paga tu transacción de respaldo",
+
+  "statecoinCreateCoin": "Crear statecoin",
+
+  "statecoinFundInstructions": "Crea con tu billetera de bitcoin una transacción que pague a esta dirección, pero no la transmitas. Pégala abajo: la app primero firma tus transacciones de respaldo con la federación y luego la transmite.",
+
+  "statecoinFundingTx": "Transacción de financiación (hex)",
+
+  "statecoinSignAndBroadcast": "Firmar respaldos y transmitir",
+
+  "statecoinFunded": "Transacción de financiación transmitida. El statecoin se activa cuando el depósito se confirme.",
+
+  "statecoinFund": "Financiar",
+
+  "statecoinReceiveInstructions": "Comparte esta dirección de statechain con quien te envía. Los statecoins enviados a ella se reclaman automáticamente mientras la pestaña Statecoin esté abierta.",
+
+  "statecoinCreateAddress": "Crear dirección",
+
+  "statecoinSendTo": "Dirección de statechain",
+
+  "statecoinSent": "Statecoin enviado",
+
+  "statecoinReceived": "{count, plural, =1{Recibiste un statecoin} other{Recibiste {count} statecoins}}",
+
+  "statecoinPegOut": "Retirar on-chain",
+
+  "statecoinPegOutAddress": "Dirección de bitcoin",
+
+  "statecoinPegOutFee": "Comisión (sats)",
+
+  "statecoinPeggedOut": "La federación está transmitiendo el retiro",
+
+  "statecoinExit": "Salir a bitcoin",
+
+  "statecoinExitConfirm": "¿Transmitir tus transacciones de respaldo? Esto mueve la moneda a tu dirección de salida sin la federación y no se puede deshacer.",
+
+  "statecoinExitProgress": "Progreso de la salida",
+
+  "statecoinExitAwaitingNode": "Esperando que se confirme la transacción nodo",
+
+  "statecoinExitTimelocked": "{blocks, plural, =1{Falta 1 bloque para poder transmitir la transacción de salida} other{Faltan {blocks} bloques para poder transmitir la transacción de salida}}",
+
+  "statecoinExitReady": "Transmitiendo la transacción de salida",
+
+  "statecoinExitBroadcast": "Transacción de salida transmitida, esperando confirmación",
+
+  "statecoinExitCompleted": "Salida a bitcoin completada",
+
+  "statecoinExitTimelock": "Bloqueo de salida",
+
+  "statecoinBlocks": "{blocks, plural, =1{1 bloque} other{{blocks} bloques}}",
+
+  "statecoinDepositTx": "Transacción de depósito",
+
+  "statecoinTransfers": "Transferencias",
+
+  "statecoinBackups": "Transacciones de respaldo",
+
+  "statecoinBackupsHint": "Firmadas pero no transmitidas. Transmitir la transacción nodo inicia una salida.",
+
+  "statecoinNodeTx": "Transacción nodo",
+
+  "statecoinExitTx": "Transacción de salida",
+
+  "statecoinPickCoin": "Elige un statecoin",
+
+  "statecoinCoinId": "Moneda",
+
+  "statecoinAmountPending": "Monto pendiente",
+
+  "statecoinStatusKeyGen": "Generando clave",
+
+  "statecoinStatusAwaitingFunding": "Esperando financiación",
+
+  "statecoinStatusUnconfirmed": "Confirmando depósito",
+
+  "statecoinStatusActive": "Activo",
+
+  "statecoinStatusSending": "Enviando",
+
+  "statecoinStatusAwaitingClaim": "Esperando reclamo",
+
+  "statecoinStatusPeggingOut": "Retirando on-chain",
+
+  "statecoinStatusExiting": "Saliendo",
+
+  "statecoinStatusClosed": "Cerrado",
+
+  "statecoinStatusInvalid": "Inválido",
+
+  "statecoinStatusUnknown": "Desconocido",
+
+  "statecoinHoldingOwned": "Tuyo",
+
+  "statecoinHoldingSent": "Enviado",
+
+  "statecoinHoldingPeggedOut": "Retirado on-chain"
 }

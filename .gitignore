@@ -48,6 +48,9 @@ app.*.map.json
 **/target
 **/*.so
 **/*.db/
+
+# Wallets of the statecoin demo (run-sender.sh, run-receiver.sh)
+/demo-data/
 **/client.db.lock
 
 # Docker APK build artifacts (needed for faster incremental builds)

@@ -24,6 +24,11 @@ import 'package:ecashapp/models.dart';
 
 import 'package:ecashapp/screens/federation_expiry_screen.dart';
 import 'package:ecashapp/screens/my_wallet_screen.dart';
+import 'package:ecashapp/screens/statecoins/statecoin_deposit.dart';
+import 'package:ecashapp/screens/statecoins/statecoin_details.dart';
+import 'package:ecashapp/screens/statecoins/statecoin_list.dart';
+import 'package:ecashapp/screens/statecoins/statecoin_receive.dart';
+import 'package:ecashapp/screens/statecoins/statecoin_wallet.dart';
 import 'package:ecashapp/widgets/dashboard_balance.dart';
 import 'package:ecashapp/widgets/empty_transactions.dart';
 import 'package:ecashapp/widgets/federation_expiry_banner.dart';
@@ -69,6 +74,12 @@ class _DashboardState extends State<Dashboard> {
   VoidCallback? _pendingAction;
   LightningAddressConfig? _lnAddressConfig;
 
+  /// The Statecoin tab follows the payment type tabs, on federations that
+  /// run the statechain module.
+  bool _statechainSupported = false;
+  bool _statecoinTab = false;
+  late final StatecoinWallet _statecoins;
+
   /// Guardian-announced shutdown, read from the cached federation meta. Either
   /// being set puts the warning banner under the balance.
   BigInt? _expiryTimestamp;
@@ -107,6 +118,11 @@ class _DashboardState extends State<Dashboard> {
     _loadLightningAddress();
     _loadFederationMeta();
     _loadRecentTransactions();
+    _loadStatechainSupport();
+    _statecoins = StatecoinWallet(
+      fed: widget.fed,
+      onClaimed: _onStatecoinsClaimed,
+    )..addListener(_onStatecoinsChanged);
 
     final depositEvents =
         subscribeDeposits(
@@ -206,6 +222,7 @@ class _DashboardState extends State<Dashboard> {
     _depositSubscription.cancel();
     _subscription.cancel();
     _scrollController.dispose();
+    _statecoins.dispose();
     super.dispose();
   }
 
@@ -432,8 +449,11 @@ class _DashboardState extends State<Dashboard> {
 
   /// Pull-to-refresh. Prices are left out so the fiat figure doesn't flash its
   /// loading state on every pull.
-  Future<void> _refresh() =>
-      Future.wait([_loadBalance(), _loadRecentTransactions()]);
+  Future<void> _refresh() => Future.wait([
+    _loadBalance(),
+    _loadRecentTransactions(),
+    if (_statecoinTab) _statecoins.refresh(),
+  ]);
 
   void _onSendPressed() async {
     if (_selectedPaymentType == PaymentType.lightning) {
@@ -463,16 +483,20 @@ class _DashboardState extends State<Dashboard> {
     _loadRecentTransactions();
   }
 
+  /// Explains why receiving is closed, if it is.
+  bool _rejectReceive() {
+    if (!_receiveDisabled) return false;
+    ToastService().show(
+      message: context.l10n.federationExpiryReceiveDisabled,
+      duration: const Duration(seconds: 5),
+      onTap: () {},
+      icon: const Icon(Icons.error),
+    );
+    return true;
+  }
+
   void _onReceivePressed() async {
-    if (_receiveDisabled) {
-      ToastService().show(
-        message: context.l10n.federationExpiryReceiveDisabled,
-        duration: const Duration(seconds: 5),
-        onTap: () {},
-        icon: const Icon(Icons.error),
-      );
-      return;
-    }
+    if (_rejectReceive()) return;
     if (_selectedPaymentType == PaymentType.lightning) {
       await Navigator.push(
         context,
@@ -509,6 +533,137 @@ class _DashboardState extends State<Dashboard> {
     }
     _loadBalance();
     _loadRecentTransactions();
+  }
+
+  Future<void> _loadStatechainSupport() async {
+    final supported = await statechainSupported(
+      federationId: widget.fed.federationId,
+    );
+    if (!mounted) return;
+    setState(() => _statechainSupported = supported);
+  }
+
+  void _onStatecoinsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onStatecoinsClaimed(int count) {
+    if (!mounted) return;
+    ToastService().show(
+      message: context.l10n.statecoinReceived(count),
+      duration: const Duration(seconds: 5),
+      onTap: () {},
+      icon: const Icon(Icons.call_received),
+    );
+  }
+
+  Future<void> _openStatecoinSheet(Widget sheet) async {
+    await showAppModalBottomSheet(
+      context: context,
+      fitContent: true,
+      childBuilder: () async => sheet,
+    );
+    _statecoins.refresh();
+  }
+
+  void _onStatecoinReceive(Widget sheet) {
+    if (_rejectReceive()) return;
+    _openStatecoinSheet(sheet);
+  }
+
+  Future<void> _onStatecoinAction(StatecoinAction action) async {
+    final coin = await pickStatecoin(context, _statecoins.spendable);
+    if (coin == null || !mounted) return;
+    await _openStatecoinSheet(
+      StatecoinDetails(fed: widget.fed, coin: coin, action: action),
+    );
+  }
+
+  List<SpeedDialChild> _statecoinMenu() => [
+    SpeedDialChild(
+      child: const Icon(Icons.add),
+      label: context.l10n.statecoinDeposit,
+      backgroundColor: _receiveDisabled ? Colors.grey : Colors.green,
+      onTap:
+          () => _scheduleAction(
+            () => _onStatecoinReceive(StatecoinDepositSheet(fed: widget.fed)),
+          ),
+    ),
+    SpeedDialChild(
+      child: const Icon(Icons.download),
+      label: context.l10n.receive,
+      backgroundColor: _receiveDisabled ? Colors.grey : Colors.green,
+      onTap:
+          () => _scheduleAction(
+            () => _onStatecoinReceive(StatecoinReceiveSheet(fed: widget.fed)),
+          ),
+    ),
+    if (_statecoins.spendable.isNotEmpty) ...[
+      SpeedDialChild(
+        child: const Icon(Icons.upload),
+        label: context.l10n.send,
+        backgroundColor: Colors.blue,
+        onTap:
+            () =>
+                _scheduleAction(() => _onStatecoinAction(StatecoinAction.send)),
+      ),
+      SpeedDialChild(
+        child: const Icon(Icons.logout),
+        label: context.l10n.statecoinPegOut,
+        backgroundColor: Colors.orange,
+        onTap:
+            () => _scheduleAction(
+              () => _onStatecoinAction(StatecoinAction.pegOut),
+            ),
+      ),
+      SpeedDialChild(
+        child: const Icon(Icons.lock_clock),
+        label: context.l10n.statecoinExit,
+        backgroundColor: Colors.redAccent,
+        onTap:
+            () =>
+                _scheduleAction(() => _onStatecoinAction(StatecoinAction.exit)),
+      ),
+    ],
+  ];
+
+  List<Widget> _statecoinSlivers(double bottomInset) {
+    final coins = _statecoins.coins;
+
+    if (coins == null) {
+      return const [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ),
+      ];
+    }
+
+    if (coins.isEmpty) {
+      return [
+        SliverPadding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          sliver: const SliverToBoxAdapter(child: StatecoinEmptyState()),
+        ),
+      ];
+    }
+
+    return [
+      SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => StatecoinItem(
+            coin: coins[index],
+            onTap:
+                () => _openStatecoinSheet(
+                  StatecoinDetails(fed: widget.fed, coin: coins[index]),
+                ),
+          ),
+          childCount: coins.length,
+        ),
+      ),
+    ];
   }
 
   void _openMyWallet() {
@@ -609,24 +764,28 @@ class _DashboardState extends State<Dashboard> {
                     });
                   }
                 },
-                children: [
-                  SpeedDialChild(
-                    child: const Icon(Icons.download),
-                    label: context.l10n.receive,
-                    // Greyed rather than hidden: the tap explains why.
-                    backgroundColor:
-                        _receiveDisabled ? Colors.grey : Colors.green,
-                    onTap: () => _scheduleAction(_onReceivePressed),
-                  ),
-                  if (balanceMsats != null && balanceMsats! > BigInt.zero) ...[
-                    SpeedDialChild(
-                      child: const Icon(Icons.upload),
-                      label: context.l10n.send,
-                      backgroundColor: Colors.blue,
-                      onTap: () => _scheduleAction(_onSendPressed),
-                    ),
-                  ],
-                ],
+                children:
+                    _statecoinTab
+                        ? _statecoinMenu()
+                        : [
+                          SpeedDialChild(
+                            child: const Icon(Icons.download),
+                            label: context.l10n.receive,
+                            // Greyed rather than hidden: the tap explains why.
+                            backgroundColor:
+                                _receiveDisabled ? Colors.grey : Colors.green,
+                            onTap: () => _scheduleAction(_onReceivePressed),
+                          ),
+                          if (balanceMsats != null &&
+                              balanceMsats! > BigInt.zero) ...[
+                            SpeedDialChild(
+                              child: const Icon(Icons.upload),
+                              label: context.l10n.send,
+                              backgroundColor: Colors.blue,
+                              onTap: () => _scheduleAction(_onSendPressed),
+                            ),
+                          ],
+                        ],
               ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -685,8 +844,16 @@ class _DashboardState extends State<Dashboard> {
                                 successorInvite: _successorInvite,
                                 bannerExtent: bannerExtent,
                                 onShutdownTap: _openShutdownDetails,
-                                balanceMsats: balanceMsats,
-                                isLoading: isLoadingBalance,
+                                // Statecoins are not ecash: their tab shows
+                                // what the wallet holds in them instead.
+                                balanceMsats:
+                                    _statecoinTab
+                                        ? _statecoins.spendableMsats
+                                        : balanceMsats,
+                                isLoading:
+                                    _statecoinTab
+                                        ? _statecoins.coins == null
+                                        : isLoadingBalance,
                                 recovering: recovering,
                                 btcPrices: _btcPrices,
                                 isLoadingPrices: _isLoadingPrices,
@@ -759,40 +926,46 @@ class _DashboardState extends State<Dashboard> {
                                 child: Row(
                                   children: [
                                     Text(
-                                      context.l10n.recentActivity,
+                                      _statecoinTab
+                                          ? context.l10n.statecoins
+                                          : context.l10n.recentActivity,
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleSmall
                                           ?.copyWith(color: Colors.grey),
                                     ),
                                     const Spacer(),
-                                    TextButton(
-                                      onPressed: _openAllTransactions,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            context.l10n.viewAll,
-                                            style: TextStyle(
+                                    // Keeps the row as tall as the button.
+                                    if (_statecoinTab)
+                                      const SizedBox(height: 48)
+                                    else
+                                      TextButton(
+                                        onPressed: _openAllTransactions,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              context.l10n.viewAll,
+                                              style: TextStyle(
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.primary,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 2),
+                                            Icon(
+                                              Icons.chevron_right,
+                                              size: 18,
                                               color:
                                                   Theme.of(
                                                     context,
                                                   ).colorScheme.primary,
-                                              fontSize: 13,
                                             ),
-                                          ),
-                                          const SizedBox(width: 2),
-                                          Icon(
-                                            Icons.chevron_right,
-                                            size: 18,
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.primary,
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
                                   ],
                                 ),
                               ),
@@ -800,7 +973,9 @@ class _DashboardState extends State<Dashboard> {
                             const SliverToBoxAdapter(
                               child: SizedBox(height: 8),
                             ),
-                            if (_isLoadingTransactions &&
+                            if (_statecoinTab)
+                              ..._statecoinSlivers(bottomInset)
+                            else if (_isLoadingTransactions &&
                                 _pendingDeposits.isEmpty)
                               const SliverToBoxAdapter(
                                 child: Padding(
@@ -867,10 +1042,20 @@ class _DashboardState extends State<Dashboard> {
                 ),
       ),
       bottomNavigationBar: GlassNavBar(
-        currentIndex: _selectedPaymentType.index,
+        currentIndex:
+            _statecoinTab
+                ? PaymentType.values.length
+                : _selectedPaymentType.index,
         onTap: (index) async {
+          if (index == PaymentType.values.length) {
+            setState(() => _statecoinTab = true);
+            _statecoins.start();
+            return;
+          }
+          _statecoins.stop();
           await _loadProgress(PaymentType.values[index]);
           setState(() {
+            _statecoinTab = false;
             _selectedPaymentType = PaymentType.values[index];
             _recentTransactions = [];
             _isLoadingTransactions = true;
@@ -884,6 +1069,10 @@ class _DashboardState extends State<Dashboard> {
             icon: Icons.currency_bitcoin,
             label: context.l10n.ecash,
           ),
+          // Hidden while recovering: the recovery view only covers the
+          // payment types.
+          if (_statechainSupported && !recovering)
+            GlassNavBarItem(icon: Icons.toll, label: context.l10n.statecoin),
         ],
       ),
     );

@@ -24,6 +24,21 @@ String redactUriForLog(Uri uri) {
   return '${uri.scheme}:$host<redacted ${uri.toString().length} chars>';
 }
 
+/// Where the app keeps its wallet and log on Linux. `ECASH_APP_DATA_DIR`
+/// overrides it so several instances can run side by side.
+Future<Directory> linuxDataDir() async {
+  final appName = kDebugMode ? 'ecash-app-dev' : 'ecash-app';
+  final homeDir = Platform.environment['HOME']!;
+  final dir = Directory(
+    Platform.environment['ECASH_APP_DATA_DIR'] ??
+        '$homeDir/.local/share/$appName',
+  );
+  if (!await dir.exists()) {
+    await dir.create(recursive: true);
+  }
+  return dir;
+}
+
 class AppLogger {
   /// Null until [init] runs — before that (and under `flutter test`, which has
   /// no app directories) logging degrades to console only. A diagnostic must
@@ -39,12 +54,7 @@ class AppLogger {
     if (Platform.isAndroid) {
       dir = await getExternalStorageDirectory();
     } else if (Platform.isLinux) {
-      final appName = kDebugMode ? 'ecash-app-dev' : 'ecash-app';
-      final homeDir = Platform.environment['HOME']!;
-      dir = Directory('$homeDir/.local/share/$appName');
-      if (!await dir.exists()) {
-        await dir.create(recursive: true);
-      }
+      dir = await linuxDataDir();
     } else {
       dir = await getApplicationDocumentsDirectory();
     }

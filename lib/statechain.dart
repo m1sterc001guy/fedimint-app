@@ -8,9 +8,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'statechain.freezed.dart';
 
-// These functions are ignored because they are not marked as `pub`: `broadcast`, `complete_exit`, `exit_state`, `new`, `parse_address`, `parse_coin_id`, `statechain_claim`, `statechain_deposit`, `statechain_exit_state`, `statechain_exit`, `statechain_fund`, `statechain_list`, `statechain_module`, `statechain_peg_out`, `statechain_receive_address`, `statechain_send`, `statechain_supported`, `statecoin`, `timelock_state`, `tip_height`, `tx_status`
+// These functions are ignored because they are not marked as `pub`: `broadcast`, `complete_exit`, `exit_state`, `new`, `parse_address`, `parse_coin_id`, `statechain_backups`, `statechain_claim`, `statechain_deposit`, `statechain_exit_state`, `statechain_exit`, `statechain_fund`, `statechain_list`, `statechain_module`, `statechain_peg_out`, `statechain_receive_address`, `statechain_send`, `statechain_supported`, `statecoin`, `timelock_state`, `tip_height`, `tx_status`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `EsploraTx`, `Esplora`, `TxStatus`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`
 
 class Statecoin {
   final String coinId;
@@ -18,19 +18,32 @@ class Statecoin {
   final StatecoinStatus status;
   final StatecoinHolding? holding;
 
+  /// The coin's on-chain address, which its funding transaction pays to
+  final String? depositAddress;
+
+  /// The transaction that funded the coin
+  final String? fundingTxid;
+
   /// Where our exit transaction pays to
   final String? exitAddress;
 
   /// Blocks our exit transaction waits after the node transaction confirms
   final int? exitTimelock;
 
+  /// How often the coin changed hands before it reached us; each transfer
+  /// shortens the exit timelock
+  final int? transfers;
+
   const Statecoin({
     required this.coinId,
     this.amountSats,
     required this.status,
     this.holding,
+    this.depositAddress,
+    this.fundingTxid,
     this.exitAddress,
     this.exitTimelock,
+    this.transfers,
   });
 
   @override
@@ -39,8 +52,11 @@ class Statecoin {
       amountSats.hashCode ^
       status.hashCode ^
       holding.hashCode ^
+      depositAddress.hashCode ^
+      fundingTxid.hashCode ^
       exitAddress.hashCode ^
-      exitTimelock.hashCode;
+      exitTimelock.hashCode ^
+      transfers.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -51,8 +67,56 @@ class Statecoin {
           amountSats == other.amountSats &&
           status == other.status &&
           holding == other.holding &&
+          depositAddress == other.depositAddress &&
+          fundingTxid == other.fundingTxid &&
           exitAddress == other.exitAddress &&
-          exitTimelock == other.exitTimelock;
+          exitTimelock == other.exitTimelock &&
+          transfers == other.transfers;
+}
+
+/// A coin's signed backup transactions, which take it on chain without the
+/// guardians: the node transaction spends the funding output and our exit
+/// transaction spends the node transaction.
+class StatecoinBackups {
+  final String nodeTxid;
+
+  /// The signed node transaction, consensus-encoded as hex
+  final String nodeTxHex;
+  final String exitTxid;
+
+  /// The signed exit transaction, consensus-encoded as hex
+  final String exitTxHex;
+
+  /// Confirmations the node transaction needs before the exit transaction
+  /// is valid
+  final int timelock;
+
+  const StatecoinBackups({
+    required this.nodeTxid,
+    required this.nodeTxHex,
+    required this.exitTxid,
+    required this.exitTxHex,
+    required this.timelock,
+  });
+
+  @override
+  int get hashCode =>
+      nodeTxid.hashCode ^
+      nodeTxHex.hashCode ^
+      exitTxid.hashCode ^
+      exitTxHex.hashCode ^
+      timelock.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StatecoinBackups &&
+          runtimeType == other.runtimeType &&
+          nodeTxid == other.nodeTxid &&
+          nodeTxHex == other.nodeTxHex &&
+          exitTxid == other.exitTxid &&
+          exitTxHex == other.exitTxHex &&
+          timelock == other.timelock;
 }
 
 class StatecoinClaim {
@@ -62,9 +126,6 @@ class StatecoinClaim {
   final List<String> failed;
 
   const StatecoinClaim({required this.claimed, required this.failed});
-
-  static Future<StatecoinClaim> default_() =>
-      RustLib.instance.api.crateStatechainStatecoinClaimDefault();
 
   @override
   int get hashCode => claimed.hashCode ^ failed.hashCode;
@@ -99,34 +160,6 @@ class StatecoinDeposit {
           runtimeType == other.runtimeType &&
           coinId == other.coinId &&
           address == other.address;
-}
-
-/// A unilateral exit in progress.
-class StatecoinExit {
-  final String nodeTxid;
-  final String exitTxid;
-
-  /// Confirmations the node transaction needs before the exit transaction
-  /// is valid
-  final int timelock;
-
-  const StatecoinExit({
-    required this.nodeTxid,
-    required this.exitTxid,
-    required this.timelock,
-  });
-
-  @override
-  int get hashCode => nodeTxid.hashCode ^ exitTxid.hashCode ^ timelock.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is StatecoinExit &&
-          runtimeType == other.runtimeType &&
-          nodeTxid == other.nodeTxid &&
-          exitTxid == other.exitTxid &&
-          timelock == other.timelock;
 }
 
 @freezed

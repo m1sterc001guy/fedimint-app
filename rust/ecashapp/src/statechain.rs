@@ -18,7 +18,7 @@ use fedimint_core::config::FederationId;
 use fedimint_core::task::sleep;
 use fedimint_statechain_client::db::LocalCoinState;
 use fedimint_statechain_client::{CoinInfo, ExitTransactions, StatechainClientModule};
-use fedimint_statechain_common::{CoinId, CoinStatus, StatechainAddress};
+use fedimint_statechain_common::{CoinId, CoinRecord, CoinStatus, StatechainAddress};
 use serde::Deserialize;
 
 use crate::app_error::{EcashAppError, EcashAppResult};
@@ -85,27 +85,52 @@ pub struct Statecoin {
     pub amount_sats: Option<u64>,
     pub status: StatecoinStatus,
     pub holding: Option<StatecoinHolding>,
+    /// The coin's on-chain address, which its funding transaction pays to
+    pub deposit_address: Option<String>,
+    /// The transaction that funded the coin
+    pub funding_txid: Option<String>,
     /// Where our exit transaction pays to
     pub exit_address: Option<String>,
     /// Blocks our exit transaction waits after the node transaction confirms
     pub exit_timelock: Option<u32>,
+    /// How often the coin changed hands before it reached us; each transfer
+    /// shortens the exit timelock
+    pub transfers: Option<u32>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct StatecoinClaim {
     pub claimed: Vec<String>,
     /// Coins sent to us that could not be claimed, as `<coin id>: <reason>`
     pub failed: Vec<String>,
 }
 
-/// A unilateral exit in progress.
+/// A coin's signed backup transactions, which take it on chain without the
+/// guardians: the node transaction spends the funding output and our exit
+/// transaction spends the node transaction.
 #[derive(Debug, Clone)]
-pub struct StatecoinExit {
+pub struct StatecoinBackups {
     pub node_txid: String,
+    /// The signed node transaction, consensus-encoded as hex
+    pub node_tx_hex: String,
     pub exit_txid: String,
+    /// The signed exit transaction, consensus-encoded as hex
+    pub exit_tx_hex: String,
     /// Confirmations the node transaction needs before the exit transaction
     /// is valid
     pub timelock: u32,
+}
+
+impl From<&ExitTransactions> for StatecoinBackups {
+    fn from(exit: &ExitTransactions) -> Self {
+        Self {
+            node_txid: exit.node_tx.compute_txid().to_string(),
+            node_tx_hex: serialize_hex(&exit.node_tx),
+            exit_txid: exit.exit_tx.compute_txid().to_string(),
+            exit_tx_hex: serialize_hex(&exit.exit_tx),
+            timelock: u32::from(exit.timelock),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -170,6 +195,13 @@ fn statecoin(
             .as_ref()
             .map_or(StatecoinStatus::Unknown, |record| (&record.status).into()),
         holding: info.local.as_ref().map(|local| (&local.state).into()),
+        deposit_address: info
+            .federation
+            .as_ref()
+            .and_then(CoinRecord::coin_script)
+            .and_then(|script| Address::from_script(&script, network).ok())
+            .map(|address| address.to_string()),
+        funding_txid: funding.map(|funding| funding.outpoint.txid.to_string()),
         exit_address: info.local.as_ref().and_then(|local| {
             Address::from_script(&local.exit_script, network)
                 .ok()
@@ -180,6 +212,7 @@ fn statecoin(
             .as_ref()
             .and_then(|local| exit_timelock(local.level))
             .map(u32::from),
+        transfers: info.local.as_ref().map(|local| u32::from(local.level)),
     }
 }
 
@@ -513,7 +546,7 @@ impl Multimint {
         &self,
         federation_id: &FederationId,
         coin_id: String,
-    ) -> EcashAppResult<StatecoinExit> {
+    ) -> EcashAppResult<StatecoinBackups> {
         let federation = self.get_federation(federation_id).await?;
         let module = statechain_module(&federation.client)?;
         let coin = parse_coin_id(&coin_id)?;
@@ -523,17 +556,28 @@ impl Multimint {
 
         esplora.broadcast(&exit.node_tx).await?;
 
-        let status = StatecoinExit {
-            node_txid: exit.node_tx.compute_txid().to_string(),
-            exit_txid: exit.exit_tx.compute_txid().to_string(),
-            timelock: u32::from(exit.timelock),
-        };
+        let backups = StatecoinBackups::from(&exit);
 
         federation
             .tasks
             .spawn_cancellable("statecoin exit", complete_exit(esplora, coin, exit));
 
-        Ok(status)
+        Ok(backups)
+    }
+
+    /// The signed backup transactions of a coin we own, without broadcasting
+    /// them.
+    pub(crate) async fn statechain_backups(
+        &self,
+        federation_id: &FederationId,
+        coin_id: String,
+    ) -> EcashAppResult<StatecoinBackups> {
+        let client = self.get_client(federation_id).await?;
+        let module = statechain_module(&client)?;
+
+        let exit = module.exit_transactions(parse_coin_id(&coin_id)?).await?;
+
+        Ok(StatecoinBackups::from(&exit))
     }
 
     pub(crate) async fn statechain_exit_state(

@@ -2401,5 +2401,185 @@
   "@federationExpiryFindFederation": {},
 
   "federationExpiryJoinSuccessor": "Join successor federation",
-  "@federationExpiryJoinSuccessor": {}
+  "@federationExpiryJoinSuccessor": {},
+
+  "statecoin": "Statecoin",
+  "@statecoin": {},
+
+  "statecoins": "Statecoins",
+  "@statecoins": {},
+
+  "statecoinsEmpty": "No statecoins yet. Deposit bitcoin or receive a statecoin from another wallet.",
+  "@statecoinsEmpty": {},
+
+  "statecoinDeposit": "Deposit",
+  "@statecoinDeposit": {},
+
+  "statecoinExitAddress": "Exit address",
+  "@statecoinExitAddress": {},
+
+  "statecoinExitAddressHint": "Bitcoin address your backup transaction pays to",
+  "@statecoinExitAddressHint": {},
+
+  "statecoinCreateCoin": "Create statecoin",
+  "@statecoinCreateCoin": {},
+
+  "statecoinFundInstructions": "Create a transaction that pays this address with your bitcoin wallet, but do not broadcast it. Paste it below: the app first co-signs your backup transactions with the federation and then broadcasts it.",
+  "@statecoinFundInstructions": {},
+
+  "statecoinFundingTx": "Funding transaction (hex)",
+  "@statecoinFundingTx": {},
+
+  "statecoinSignAndBroadcast": "Sign backups and broadcast",
+  "@statecoinSignAndBroadcast": {},
+
+  "statecoinFunded": "Funding transaction broadcast. The statecoin becomes active once the deposit confirms.",
+  "@statecoinFunded": {},
+
+  "statecoinFund": "Fund",
+  "@statecoinFund": {},
+
+  "statecoinReceiveInstructions": "Share this statechain address with the sender. Statecoins sent to it are claimed automatically while the Statecoin tab is open.",
+  "@statecoinReceiveInstructions": {},
+
+  "statecoinCreateAddress": "Create address",
+  "@statecoinCreateAddress": {},
+
+  "statecoinSendTo": "Statechain address",
+  "@statecoinSendTo": {},
+
+  "statecoinSent": "Statecoin sent",
+  "@statecoinSent": {},
+
+  "statecoinReceived": "{count, plural, =1{Received a statecoin} other{Received {count} statecoins}}",
+  "@statecoinReceived": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "statecoinPegOut": "Peg out",
+  "@statecoinPegOut": {},
+
+  "statecoinPegOutAddress": "Bitcoin address",
+  "@statecoinPegOutAddress": {},
+
+  "statecoinPegOutFee": "Fee (sats)",
+  "@statecoinPegOutFee": {},
+
+  "statecoinPeggedOut": "The federation is broadcasting the peg-out",
+  "@statecoinPeggedOut": {},
+
+  "statecoinExit": "Exit to bitcoin",
+  "@statecoinExit": {},
+
+  "statecoinExitConfirm": "Broadcast your backup transactions? This moves the coin to your exit address without the federation and cannot be undone.",
+  "@statecoinExitConfirm": {},
+
+  "statecoinExitProgress": "Exit progress",
+  "@statecoinExitProgress": {},
+
+  "statecoinExitAwaitingNode": "Waiting for the node transaction to confirm",
+  "@statecoinExitAwaitingNode": {},
+
+  "statecoinExitTimelocked": "{blocks, plural, =1{1 more block until the exit transaction can be broadcast} other{{blocks} more blocks until the exit transaction can be broadcast}}",
+  "@statecoinExitTimelocked": {
+    "placeholders": {
+      "blocks": {
+        "type": "int"
+      }
+    }
+  },
+
+  "statecoinExitReady": "Broadcasting the exit transaction",
+  "@statecoinExitReady": {},
+
+  "statecoinExitBroadcast": "Exit transaction broadcast, waiting for confirmation",
+  "@statecoinExitBroadcast": {},
+
+  "statecoinExitCompleted": "Exited to bitcoin",
+  "@statecoinExitCompleted": {},
+
+  "statecoinExitTimelock": "Exit timelock",
+  "@statecoinExitTimelock": {},
+
+  "statecoinBlocks": "{blocks, plural, =1{1 block} other{{blocks} blocks}}",
+  "@statecoinBlocks": {
+    "placeholders": {
+      "blocks": {
+        "type": "int"
+      }
+    }
+  },
+
+  "statecoinDepositTx": "Deposit transaction",
+  "@statecoinDepositTx": {},
+
+  "statecoinTransfers": "Transfers",
+  "@statecoinTransfers": {},
+
+  "statecoinBackups": "Backup transactions",
+  "@statecoinBackups": {},
+
+  "statecoinBackupsHint": "Signed but not broadcast. Broadcasting the node transaction starts an exit.",
+  "@statecoinBackupsHint": {},
+
+  "statecoinNodeTx": "Node transaction",
+  "@statecoinNodeTx": {},
+
+  "statecoinExitTx": "Exit transaction",
+  "@statecoinExitTx": {},
+
+  "statecoinPickCoin": "Choose a statecoin",
+  "@statecoinPickCoin": {},
+
+  "statecoinCoinId": "Coin",
+  "@statecoinCoinId": {},
+
+  "statecoinAmountPending": "Amount pending",
+  "@statecoinAmountPending": {},
+
+  "statecoinStatusKeyGen": "Generating key",
+  "@statecoinStatusKeyGen": {},
+
+  "statecoinStatusAwaitingFunding": "Awaiting funding",
+  "@statecoinStatusAwaitingFunding": {},
+
+  "statecoinStatusUnconfirmed": "Confirming deposit",
+  "@statecoinStatusUnconfirmed": {},
+
+  "statecoinStatusActive": "Active",
+  "@statecoinStatusActive": {},
+
+  "statecoinStatusSending": "Sending",
+  "@statecoinStatusSending": {},
+
+  "statecoinStatusAwaitingClaim": "Awaiting claim",
+  "@statecoinStatusAwaitingClaim": {},
+
+  "statecoinStatusPeggingOut": "Pegging out",
+  "@statecoinStatusPeggingOut": {},
+
+  "statecoinStatusExiting": "Exiting",
+  "@statecoinStatusExiting": {},
+
+  "statecoinStatusClosed": "Closed",
+  "@statecoinStatusClosed": {},
+
+  "statecoinStatusInvalid": "Invalid",
+  "@statecoinStatusInvalid": {},
+
+  "statecoinStatusUnknown": "Unknown",
+  "@statecoinStatusUnknown": {},
+
+  "statecoinHoldingOwned": "Owned",
+  "@statecoinHoldingOwned": {},
+
+  "statecoinHoldingSent": "Sent",
+  "@statecoinHoldingSent": {},
+
+  "statecoinHoldingPeggedOut": "Pegged out",
+  "@statecoinHoldingPeggedOut": {}
 }

@@ -1269,13 +1269,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Statecoin dco_decode_statecoin(dynamic raw);
 
   @protected
+  StatecoinBackups dco_decode_statecoin_backups(dynamic raw);
+
+  @protected
   StatecoinClaim dco_decode_statecoin_claim(dynamic raw);
 
   @protected
   StatecoinDeposit dco_decode_statecoin_deposit(dynamic raw);
-
-  @protected
-  StatecoinExit dco_decode_statecoin_exit(dynamic raw);
 
   @protected
   StatecoinExitState dco_decode_statecoin_exit_state(dynamic raw);
@@ -2506,13 +2506,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Statecoin sse_decode_statecoin(SseDeserializer deserializer);
 
   @protected
+  StatecoinBackups sse_decode_statecoin_backups(SseDeserializer deserializer);
+
+  @protected
   StatecoinClaim sse_decode_statecoin_claim(SseDeserializer deserializer);
 
   @protected
   StatecoinDeposit sse_decode_statecoin_deposit(SseDeserializer deserializer);
-
-  @protected
-  StatecoinExit sse_decode_statecoin_exit(SseDeserializer deserializer);
 
   @protected
   StatecoinExitState sse_decode_statecoin_exit_state(
@@ -3989,6 +3989,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_statecoin(Statecoin self, SseSerializer serializer);
 
   @protected
+  void sse_encode_statecoin_backups(
+    StatecoinBackups self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_statecoin_claim(
     StatecoinClaim self,
     SseSerializer serializer,
@@ -3999,9 +4005,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     StatecoinDeposit self,
     SseSerializer serializer,
   );
-
-  @protected
-  void sse_encode_statecoin_exit(StatecoinExit self, SseSerializer serializer);
 
   @protected
   void sse_encode_statecoin_exit_state(
