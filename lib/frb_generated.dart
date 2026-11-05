@@ -1421,7 +1421,6 @@ abstract class RustLibApi extends BaseApi {
 
   Future<StatecoinDeposit> crateStatechainDeposit({
     required FederationId federationId,
-    required String exitAddress,
   });
 
   Future<StatecoinBackups> crateStatechainExit({
@@ -1438,6 +1437,7 @@ abstract class RustLibApi extends BaseApi {
     required FederationId federationId,
     required String coinId,
     required String fundingTxHex,
+    required String exitAddress,
   });
 
   Future<List<Statecoin>> crateStatechainList({
@@ -12434,7 +12434,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @override
   Future<StatecoinDeposit> crateStatechainDeposit({
     required FederationId federationId,
-    required String exitAddress,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -12444,7 +12443,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             federationId,
             serializer,
           );
-          sse_encode_String(exitAddress, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -12457,7 +12455,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_ecash_app_error,
         ),
         constMeta: kCrateStatechainDepositConstMeta,
-        argValues: [federationId, exitAddress],
+        argValues: [federationId],
         apiImpl: this,
       ),
     );
@@ -12465,7 +12463,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateStatechainDepositConstMeta => const TaskConstMeta(
     debugName: "statechain_deposit",
-    argNames: ["federationId", "exitAddress"],
+    argNames: ["federationId"],
   );
 
   @override
@@ -12547,6 +12545,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required FederationId federationId,
     required String coinId,
     required String fundingTxHex,
+    required String exitAddress,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -12558,6 +12557,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
           sse_encode_String(coinId, serializer);
           sse_encode_String(fundingTxHex, serializer);
+          sse_encode_String(exitAddress, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -12570,7 +12570,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_ecash_app_error,
         ),
         constMeta: kCrateStatechainFundConstMeta,
-        argValues: [federationId, coinId, fundingTxHex],
+        argValues: [federationId, coinId, fundingTxHex, exitAddress],
         apiImpl: this,
       ),
     );
@@ -12578,7 +12578,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateStatechainFundConstMeta => const TaskConstMeta(
     debugName: "statechain_fund",
-    argNames: ["federationId", "coinId", "fundingTxHex"],
+    argNames: ["federationId", "coinId", "fundingTxHex", "exitAddress"],
   );
 
   @override
@@ -16019,8 +16019,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Statecoin dco_decode_statecoin(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 9)
-      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
     return Statecoin(
       coinId: dco_decode_String(arr[0]),
       amountSats: dco_decode_opt_box_autoadd_u_64(arr[1]),
@@ -16031,6 +16031,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       exitAddress: dco_decode_opt_String(arr[6]),
       exitTimelock: dco_decode_opt_box_autoadd_u_32(arr[7]),
       transfers: dco_decode_opt_box_autoadd_u_32(arr[8]),
+      federationStale: dco_decode_bool(arr[9]),
     );
   }
 
@@ -19333,6 +19334,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_exitAddress = sse_decode_opt_String(deserializer);
     var var_exitTimelock = sse_decode_opt_box_autoadd_u_32(deserializer);
     var var_transfers = sse_decode_opt_box_autoadd_u_32(deserializer);
+    var var_federationStale = sse_decode_bool(deserializer);
     return Statecoin(
       coinId: var_coinId,
       amountSats: var_amountSats,
@@ -19343,6 +19345,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       exitAddress: var_exitAddress,
       exitTimelock: var_exitTimelock,
       transfers: var_transfers,
+      federationStale: var_federationStale,
     );
   }
 
@@ -22672,6 +22675,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_String(self.exitAddress, serializer);
     sse_encode_opt_box_autoadd_u_32(self.exitTimelock, serializer);
     sse_encode_opt_box_autoadd_u_32(self.transfers, serializer);
+    sse_encode_bool(self.federationStale, serializer);
   }
 
   @protected

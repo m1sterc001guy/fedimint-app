@@ -779,6 +779,8 @@
 
   "statecoinExitTx": "Transacción de salida",
 
+  "statecoinFederationUnreachable": "No se puede contactar a la federación. Los estados pueden estar desactualizados, pero tus statecoins aún pueden salir a bitcoin.",
+
   "statecoinPickCoin": "Elige un statecoin",
 
   "statecoinCoinId": "Moneda",

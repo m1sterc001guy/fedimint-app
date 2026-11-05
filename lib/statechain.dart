@@ -8,7 +8,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'statechain.freezed.dart';
 
-// These functions are ignored because they are not marked as `pub`: `broadcast`, `complete_exit`, `exit_state`, `new`, `parse_address`, `parse_coin_id`, `statechain_backups`, `statechain_claim`, `statechain_deposit`, `statechain_exit_state`, `statechain_exit`, `statechain_fund`, `statechain_list`, `statechain_module`, `statechain_peg_out`, `statechain_receive_address`, `statechain_send`, `statechain_supported`, `statecoin`, `timelock_state`, `tip_height`, `tx_status`
+// These functions are ignored because they are not marked as `pub`: `broadcast`, `chain_exit_state`, `complete_exit`, `exit_state`, `new`, `parse_address`, `parse_coin_id`, `statechain_backups`, `statechain_claim`, `statechain_deposit`, `statechain_exit_state`, `statechain_exit`, `statechain_fund`, `statechain_list`, `statechain_module`, `statechain_peg_out`, `statechain_receive_address`, `statechain_send`, `statechain_supported`, `statecoin`, `timelock_state`, `tip_height`, `tx_status`, `with_chain_exit`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `EsploraTx`, `Esplora`, `TxStatus`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`
 
@@ -34,6 +34,10 @@ class Statecoin {
   /// shortens the exit timelock
   final int? transfers;
 
+  /// The federation could not be reached, so the status is the last one it
+  /// reported, corrected by what the chain shows
+  final bool federationStale;
+
   const Statecoin({
     required this.coinId,
     this.amountSats,
@@ -44,6 +48,7 @@ class Statecoin {
     this.exitAddress,
     this.exitTimelock,
     this.transfers,
+    required this.federationStale,
   });
 
   @override
@@ -56,7 +61,8 @@ class Statecoin {
       fundingTxid.hashCode ^
       exitAddress.hashCode ^
       exitTimelock.hashCode ^
-      transfers.hashCode;
+      transfers.hashCode ^
+      federationStale.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -71,7 +77,8 @@ class Statecoin {
           fundingTxid == other.fundingTxid &&
           exitAddress == other.exitAddress &&
           exitTimelock == other.exitTimelock &&
-          transfers == other.transfers;
+          transfers == other.transfers &&
+          federationStale == other.federationStale;
 }
 
 /// A coin's signed backup transactions, which take it on chain without the

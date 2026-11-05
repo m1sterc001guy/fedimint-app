@@ -820,26 +820,25 @@ Future<List<Contact>> paginateSearchContacts({
 Future<bool> statechainSupported({required FederationId federationId}) =>
     RustLib.instance.api.crateStatechainSupported(federationId: federationId);
 
-/// Creates a statecoin whose exit transactions pay to `exit_address`. Fund it
-/// with [`statechain_fund`], not by broadcasting a payment to its address.
+/// Creates a statecoin. Fund it with [`statechain_fund`], not by broadcasting
+/// a payment to its address.
 Future<StatecoinDeposit> statechainDeposit({
   required FederationId federationId,
-  required String exitAddress,
-}) => RustLib.instance.api.crateStatechainDeposit(
-  federationId: federationId,
-  exitAddress: exitAddress,
-);
+}) => RustLib.instance.api.crateStatechainDeposit(federationId: federationId);
 
 /// Co-signs the coin's backup transactions for a signed, not yet broadcast
-/// funding transaction and then broadcasts it. Returns the funding txid.
+/// funding transaction, the exit transaction paying to `exit_address`, and
+/// then broadcasts the funding transaction. Returns its txid.
 Future<String> statechainFund({
   required FederationId federationId,
   required String coinId,
   required String fundingTxHex,
+  required String exitAddress,
 }) => RustLib.instance.api.crateStatechainFund(
   federationId: federationId,
   coinId: coinId,
   fundingTxHex: fundingTxHex,
+  exitAddress: exitAddress,
 );
 
 Future<String> statechainReceiveAddress({

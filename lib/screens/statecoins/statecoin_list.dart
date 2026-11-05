@@ -54,6 +54,33 @@ class StatecoinItem extends StatelessWidget {
   }
 }
 
+/// Shown while the federation is unreachable. The coins stay ours and can exit
+/// without it; only their statuses may be out of date.
+class StatecoinFederationUnreachable extends StatelessWidget {
+  const StatecoinFederationUnreachable({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off, size: 18, color: Colors.grey[500]),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.statecoinFederationUnreachable,
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Shown on the Statecoin tab before the wallet has any statecoins.
 class StatecoinEmptyState extends StatelessWidget {
   const StatecoinEmptyState({super.key});

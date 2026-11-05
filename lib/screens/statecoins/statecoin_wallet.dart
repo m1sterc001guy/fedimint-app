@@ -22,7 +22,8 @@ class StatecoinWallet extends ChangeNotifier {
 
   List<Statecoin>? _coins;
   Timer? _timer;
-  bool _refreshing = false;
+  bool _listing = false;
+  bool _claiming = false;
   bool _disposed = false;
 
   /// A coin that cannot be claimed fails again on every refresh; log it once.
@@ -43,6 +44,11 @@ class StatecoinWallet extends ChangeNotifier {
     (sum, coin) => sum + (coin.amountSats ?? BigInt.zero) * BigInt.from(1000),
   );
 
+  /// The federation could not be reached on the last refresh, so statuses are
+  /// the last ones it reported, corrected by what the chain shows.
+  bool get federationStale =>
+      _coins?.any((coin) => coin.federationStale) ?? false;
+
   void start() {
     _timer ??= Timer.periodic(_refreshInterval, (_) => refresh());
     refresh();
@@ -53,12 +59,19 @@ class StatecoinWallet extends ChangeNotifier {
     _timer = null;
   }
 
+  /// Claims coins sent to us and reloads the list. Claiming needs the
+  /// federation and listing does not, so the claim runs on its own: an
+  /// unreachable federation must not hold up the coins we already have.
   Future<void> refresh() async {
-    if (_refreshing) return;
-    _refreshing = true;
+    unawaited(_claim());
+    await _list();
+  }
+
+  Future<void> _list() async {
+    if (_listing) return;
+    _listing = true;
 
     try {
-      await _claim();
       final coins = await statechainList(federationId: fed.federationId);
       final sorted = [
         ...coins.where((coin) => coin.isHeld),
@@ -70,17 +83,22 @@ class StatecoinWallet extends ChangeNotifier {
     } catch (e) {
       AppLogger.instance.warn('Could not load statecoins: $e');
     } finally {
-      _refreshing = false;
+      _listing = false;
     }
   }
 
   Future<void> _claim() async {
+    if (_claiming) return;
+    _claiming = true;
+
     final StatecoinClaim claim;
     try {
       claim = await statechainClaim(federationId: fed.federationId);
     } catch (e) {
       AppLogger.instance.warn('Could not claim statecoins: $e');
       return;
+    } finally {
+      _claiming = false;
     }
 
     for (final failure in claim.failed) {
@@ -91,6 +109,7 @@ class StatecoinWallet extends ChangeNotifier {
 
     if (claim.claimed.isNotEmpty && !_disposed) {
       onClaimed(claim.claimed.length);
+      await _list();
     }
   }
 

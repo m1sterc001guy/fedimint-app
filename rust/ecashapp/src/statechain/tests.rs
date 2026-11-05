@@ -8,7 +8,9 @@ use fedimint_core::db::Database;
 use fedimint_core::rustls::install_crypto_provider;
 use fedimint_statechain_common::{CoinStatus, StatechainAddress};
 
-use super::{timelock_state, StatecoinExitState, StatecoinHolding, StatecoinStatus};
+use super::{
+    timelock_state, with_chain_exit, StatecoinExitState, StatecoinHolding, StatecoinStatus,
+};
 use crate::multimint::{Multimint, MultimintCreation};
 
 #[test]
@@ -42,6 +44,46 @@ fn coin_statuses_map_to_what_the_wallet_shows() {
         StatecoinStatus::from(&CoinStatus::Closed {
             txid: bitcoin::Txid::from_raw_hash(bitcoin::hashes::Hash::all_zeros())
         }),
+        StatecoinStatus::Closed
+    );
+}
+
+#[test]
+fn the_chain_shows_an_exit_whatever_the_federation_reports() {
+    // Nothing on chain: the federation's status, possibly the last one it
+    // reported before going offline.
+    assert_eq!(
+        with_chain_exit(StatecoinStatus::Active, None),
+        StatecoinStatus::Active
+    );
+
+    // A broadcast node transaction makes the coin unspendable, so it leaves
+    // the balance even while the federation still reports it active.
+    for state in [
+        StatecoinExitState::AwaitingNodeConfirmation,
+        StatecoinExitState::Timelocked {
+            blocks_remaining: 10,
+        },
+        StatecoinExitState::Ready,
+        StatecoinExitState::ExitBroadcast,
+    ] {
+        assert_eq!(
+            with_chain_exit(StatecoinStatus::Active, Some(&state)),
+            StatecoinStatus::Exiting
+        );
+    }
+
+    assert_eq!(
+        with_chain_exit(
+            StatecoinStatus::Active,
+            Some(&StatecoinExitState::Completed)
+        ),
+        StatecoinStatus::Closed
+    );
+
+    // A coin the federation saw spent stays closed.
+    assert_eq!(
+        with_chain_exit(StatecoinStatus::Closed, Some(&StatecoinExitState::Ready)),
         StatecoinStatus::Closed
     );
 }
@@ -145,9 +187,7 @@ async fn statecoin_round_trip_against_devimint() -> anyhow::Result<()> {
 
     // Peg-in: the backups are signed before the app broadcasts the funding
     // transaction.
-    let deposit = alice
-        .statechain_deposit(&federation_id, bitcoin_cli(&["getnewaddress"])?)
-        .await?;
+    let deposit = alice.statechain_deposit(&federation_id).await?;
     let coin_id = deposit.coin_id.clone();
 
     let funding = bitcoin_cli(&[
@@ -163,7 +203,12 @@ async fn statecoin_round_trip_against_devimint() -> anyhow::Result<()> {
         .to_string();
 
     alice
-        .statechain_fund(&federation_id, coin_id.clone(), funding_hex)
+        .statechain_fund(
+            &federation_id,
+            coin_id.clone(),
+            funding_hex,
+            bitcoin_cli(&["getnewaddress"])?,
+        )
         .await?;
 
     mine(10)?;

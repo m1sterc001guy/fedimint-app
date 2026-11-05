@@ -2532,6 +2532,9 @@
   "statecoinExitTx": "Exit transaction",
   "@statecoinExitTx": {},
 
+  "statecoinFederationUnreachable": "Can't reach the federation. Statuses may be out of date, but your statecoins can still exit to bitcoin.",
+  "@statecoinFederationUnreachable": {},
+
   "statecoinPickCoin": "Choose a statecoin",
   "@statecoinPickCoin": {},
 

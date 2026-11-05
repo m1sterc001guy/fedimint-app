@@ -1633,28 +1633,27 @@ pub async fn statechain_supported(federation_id: &FederationId) -> bool {
     get_multimint().statechain_supported(federation_id).await
 }
 
-/// Creates a statecoin whose exit transactions pay to `exit_address`. Fund it
-/// with [`statechain_fund`], not by broadcasting a payment to its address.
+/// Creates a statecoin. Fund it with [`statechain_fund`], not by broadcasting
+/// a payment to its address.
 #[frb]
 pub async fn statechain_deposit(
     federation_id: &FederationId,
-    exit_address: String,
 ) -> Result<StatecoinDeposit, EcashAppError> {
-    get_multimint()
-        .statechain_deposit(federation_id, exit_address)
-        .await
+    get_multimint().statechain_deposit(federation_id).await
 }
 
 /// Co-signs the coin's backup transactions for a signed, not yet broadcast
-/// funding transaction and then broadcasts it. Returns the funding txid.
+/// funding transaction, the exit transaction paying to `exit_address`, and
+/// then broadcasts the funding transaction. Returns its txid.
 #[frb]
 pub async fn statechain_fund(
     federation_id: &FederationId,
     coin_id: String,
     funding_tx_hex: String,
+    exit_address: String,
 ) -> Result<String, EcashAppError> {
     get_multimint()
-        .statechain_fund(federation_id, coin_id, funding_tx_hex)
+        .statechain_fund(federation_id, coin_id, funding_tx_hex, exit_address)
         .await
 }
 

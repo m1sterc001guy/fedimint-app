@@ -15560,7 +15560,6 @@ fn wire__crate__statechain_deposit_impl(
             let api_federation_id = <RustOpaqueMoi<
                 flutter_rust_bridge::for_generated::RustAutoOpaqueInner<FederationId>,
             >>::sse_decode(&mut deserializer);
-            let api_exit_address = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, crate::app_error::EcashAppError>(
@@ -15585,8 +15584,7 @@ fn wire__crate__statechain_deposit_impl(
                         }
                         let api_federation_id_guard = api_federation_id_guard.unwrap();
                         let output_ok =
-                            crate::statechain_deposit(&*api_federation_id_guard, api_exit_address)
-                                .await?;
+                            crate::statechain_deposit(&*api_federation_id_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -15741,6 +15739,7 @@ fn wire__crate__statechain_fund_impl(
             >>::sse_decode(&mut deserializer);
             let api_coin_id = <String>::sse_decode(&mut deserializer);
             let api_funding_tx_hex = <String>::sse_decode(&mut deserializer);
+            let api_exit_address = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, crate::app_error::EcashAppError>(
@@ -15768,6 +15767,7 @@ fn wire__crate__statechain_fund_impl(
                             &*api_federation_id_guard,
                             api_coin_id,
                             api_funding_tx_hex,
+                            api_exit_address,
                         )
                         .await?;
                         Ok(output_ok)
@@ -19145,6 +19145,7 @@ impl SseDecode for crate::statechain::Statecoin {
         let mut var_exitAddress = <Option<String>>::sse_decode(deserializer);
         let mut var_exitTimelock = <Option<u32>>::sse_decode(deserializer);
         let mut var_transfers = <Option<u32>>::sse_decode(deserializer);
+        let mut var_federationStale = <bool>::sse_decode(deserializer);
         return crate::statechain::Statecoin {
             coin_id: var_coinId,
             amount_sats: var_amountSats,
@@ -19155,6 +19156,7 @@ impl SseDecode for crate::statechain::Statecoin {
             exit_address: var_exitAddress,
             exit_timelock: var_exitTimelock,
             transfers: var_transfers,
+            federation_stale: var_federationStale,
         };
     }
 }
@@ -22176,6 +22178,7 @@ impl flutter_rust_bridge::IntoDart for crate::statechain::Statecoin {
             self.exit_address.into_into_dart().into_dart(),
             self.exit_timelock.into_into_dart().into_dart(),
             self.transfers.into_into_dart().into_dart(),
+            self.federation_stale.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -24613,6 +24616,7 @@ impl SseEncode for crate::statechain::Statecoin {
         <Option<String>>::sse_encode(self.exit_address, serializer);
         <Option<u32>>::sse_encode(self.exit_timelock, serializer);
         <Option<u32>>::sse_encode(self.transfers, serializer);
+        <bool>::sse_encode(self.federation_stale, serializer);
     }
 }
 

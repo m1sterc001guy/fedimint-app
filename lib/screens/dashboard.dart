@@ -651,6 +651,8 @@ class _DashboardState extends State<Dashboard> {
     }
 
     return [
+      if (_statecoins.federationStale)
+        const SliverToBoxAdapter(child: StatecoinFederationUnreachable()),
       SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) => StatecoinItem(

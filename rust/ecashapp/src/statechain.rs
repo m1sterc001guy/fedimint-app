@@ -15,6 +15,7 @@ use bitcoin::consensus::encode::{deserialize_hex, serialize_hex};
 use bitcoin::{Address, Network, Transaction, Txid};
 use fedimint_client::{ClientHandleArc, ClientModuleInstance};
 use fedimint_core::config::FederationId;
+use fedimint_core::runtime;
 use fedimint_core::task::sleep;
 use fedimint_statechain_client::db::LocalCoinState;
 use fedimint_statechain_client::{CoinInfo, ExitTransactions, StatechainClientModule};
@@ -22,14 +23,18 @@ use fedimint_statechain_common::{CoinId, CoinRecord, CoinStatus, StatechainAddre
 use serde::Deserialize;
 
 use crate::app_error::{EcashAppError, EcashAppResult};
-use crate::multimint::Multimint;
+use crate::multimint::{LogLevel, Multimint, MultimintEvent};
 use crate::net::http_client;
 use crate::wallet::mempool_api_url;
-use crate::{error_to_flutter, info_to_flutter};
+use crate::{error_to_flutter, get_event_bus, info_to_flutter};
 
 /// How often a unilateral exit checks on its node transaction to tell when the
 /// exit transaction may be broadcast
 const EXIT_POLL_INTERVAL: Duration = Duration::from_secs(5);
+
+/// How long listing the coins waits for esplora to tell whether a coin is
+/// exiting before showing it without
+const CHAIN_CHECK_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// A freshly created statecoin and the address to fund it at.
 #[derive(Debug, Clone)]
@@ -96,6 +101,9 @@ pub struct Statecoin {
     /// How often the coin changed hands before it reached us; each transfer
     /// shortens the exit timelock
     pub transfers: Option<u32>,
+    /// The federation could not be reached, so the status is the last one it
+    /// reported, corrected by what the chain shows
+    pub federation_stale: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -213,6 +221,62 @@ fn statecoin(
             .and_then(|local| exit_timelock(local.level))
             .map(u32::from),
         transfers: info.local.as_ref().map(|local| u32::from(local.level)),
+        federation_stale: info.stale,
+    }
+}
+
+/// The status to show for a coin given what the chain shows of its exit. The
+/// chain shows an exit before the federation does, and also while the
+/// federation is unreachable.
+fn with_chain_exit(status: StatecoinStatus, chain: Option<&StatecoinExitState>) -> StatecoinStatus {
+    match chain {
+        Some(StatecoinExitState::Completed) => StatecoinStatus::Closed,
+        Some(_) if status != StatecoinStatus::Closed => StatecoinStatus::Exiting,
+        _ => status,
+    }
+}
+
+/// The exit of a coin we own as the chain shows it, once its node transaction
+/// has been broadcast. Anyone holding the coin's backups can start an exit, and
+/// none of this needs the guardians.
+async fn chain_exit_state(
+    module: &StatechainClientModule,
+    esplora: &Esplora,
+    info: &CoinInfo,
+) -> Option<StatecoinExitState> {
+    if !matches!(info.local.as_ref()?.state, LocalCoinState::Owned) {
+        return None;
+    }
+
+    // A coin has no backups until it is funded.
+    let exit = module.exit_transactions(info.coin).await.ok()?;
+
+    let state = runtime::timeout(CHAIN_CHECK_TIMEOUT, async {
+        if esplora
+            .tx_status(exit.node_tx.compute_txid())
+            .await?
+            .is_none()
+        {
+            return anyhow::Ok(None);
+        }
+
+        Ok(Some(esplora.exit_state(&exit).await?))
+    })
+    .await
+    .map_err(anyhow::Error::from)
+    .and_then(|state| state);
+
+    match state {
+        Ok(state) => state,
+        Err(err) => {
+            get_event_bus()
+                .publish(MultimintEvent::Log(
+                    LogLevel::Debug,
+                    format!("Could not check statecoin {} on chain: {err:#}", info.coin),
+                ))
+                .await;
+            None
+        }
     }
 }
 
@@ -405,16 +469,15 @@ impl Multimint {
         }
     }
 
-    /// Creates a statecoin whose exit transactions pay to `exit_address`.
+    /// Creates a statecoin; its exit address is chosen when funding it.
     pub(crate) async fn statechain_deposit(
         &self,
         federation_id: &FederationId,
-        exit_address: String,
     ) -> EcashAppResult<StatecoinDeposit> {
         let client = self.get_client(federation_id).await?;
         let module = statechain_module(&client)?;
 
-        let deposit = module.deposit(parse_address(&exit_address)?).await?;
+        let deposit = module.deposit().await?;
 
         Ok(StatecoinDeposit {
             coin_id: deposit.coin.to_string(),
@@ -423,12 +486,14 @@ impl Multimint {
     }
 
     /// Co-signs a coin's backup transactions for a signed but not yet broadcast
-    /// funding transaction, then broadcasts it. Returns the funding txid.
+    /// funding transaction, the exit transaction paying to `exit_address`,
+    /// then broadcasts the funding transaction. Returns its txid.
     pub(crate) async fn statechain_fund(
         &self,
         federation_id: &FederationId,
         coin_id: String,
         funding_tx_hex: String,
+        exit_address: String,
     ) -> EcashAppResult<String> {
         let client = self.get_client(federation_id).await?;
         let module = statechain_module(&client)?;
@@ -436,7 +501,13 @@ impl Multimint {
         let funding_tx: Transaction = deserialize_hex(funding_tx_hex.trim())
             .map_err(|err| EcashAppError::other(format!("Invalid funding transaction: {err}")))?;
 
-        module.fund(parse_coin_id(&coin_id)?, &funding_tx).await?;
+        module
+            .fund(
+                parse_coin_id(&coin_id)?,
+                &funding_tx,
+                parse_address(&exit_address)?,
+            )
+            .await?;
 
         // Only now that the backups are signed may the funds leave the wallet.
         let txid = Esplora::new(module.params().network)
@@ -505,14 +576,24 @@ impl Multimint {
     ) -> EcashAppResult<Vec<Statecoin>> {
         let client = self.get_client(federation_id).await?;
         let module = statechain_module(&client)?;
-        let params = module.params().clone();
+        let params = &module.params().clone();
+        let esplora = &Esplora::new(params.network);
+        let module = &*module;
 
-        Ok(module
+        let coins = module
             .list_coins()
-            .await?
+            .await
             .into_iter()
-            .map(|info| statecoin(info, params.network, |level| params.exit_timelock(level)))
-            .collect())
+            .map(move |info| async move {
+                let chain = chain_exit_state(module, esplora, &info).await;
+                let mut coin = statecoin(info, params.network, |level| params.exit_timelock(level));
+
+                coin.status = with_chain_exit(coin.status, chain.as_ref());
+
+                coin
+            });
+
+        Ok(futures_util::future::join_all(coins).await)
     }
 
     /// Cooperatively pegs a coin out; the guardians broadcast the transaction.

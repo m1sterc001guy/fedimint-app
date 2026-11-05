@@ -18,24 +18,15 @@ class StatecoinDepositSheet extends StatefulWidget {
 }
 
 class _StatecoinDepositSheetState extends State<StatecoinDepositSheet> {
-  final _exitAddress = TextEditingController();
   StatecoinDeposit? _deposit;
   bool _creating = false;
 
-  @override
-  void dispose() {
-    _exitAddress.dispose();
-    super.dispose();
-  }
-
   Future<void> _create() async {
-    final exitAddress = _exitAddress.text.trim();
     setState(() => _creating = true);
 
     try {
       final deposit = await statechainDeposit(
         federationId: widget.fed.federationId,
-        exitAddress: exitAddress,
       );
       if (!mounted) return;
       setState(() => _deposit = deposit);
@@ -64,20 +55,10 @@ class _StatecoinDepositSheetState extends State<StatecoinDepositSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           StatecoinSheetTitle(context.l10n.statecoinDeposit),
-          StatecoinTextField(
-            controller: _exitAddress,
-            label: context.l10n.statecoinExitAddress,
-            helper: context.l10n.statecoinExitAddressHint,
-            enabled: !_creating,
-          ),
-          ValueListenableBuilder(
-            valueListenable: _exitAddress,
-            builder:
-                (context, value, _) => StatecoinActionButton(
-                  label: context.l10n.statecoinCreateCoin,
-                  busy: _creating,
-                  onPressed: value.text.trim().isEmpty ? null : _create,
-                ),
+          StatecoinActionButton(
+            label: context.l10n.statecoinCreateCoin,
+            busy: _creating,
+            onPressed: _create,
           ),
         ],
       ),
@@ -85,8 +66,9 @@ class _StatecoinDepositSheetState extends State<StatecoinDepositSheet> {
   }
 }
 
-/// Funds a statecoin: the federation co-signs the coin's backup transactions
-/// for the pasted funding transaction before the app broadcasts it.
+/// Funds a statecoin: the federation co-signs the coin's backup transactions,
+/// which pay to the chosen exit address, for the pasted funding transaction
+/// before the app broadcasts it.
 class StatecoinFundForm extends StatefulWidget {
   final FederationSelector fed;
   final String coinId;
@@ -105,11 +87,13 @@ class StatecoinFundForm extends StatefulWidget {
 
 class _StatecoinFundFormState extends State<StatecoinFundForm> {
   final _fundingTx = TextEditingController();
+  final _exitAddress = TextEditingController();
   bool _funding = false;
 
   @override
   void dispose() {
     _fundingTx.dispose();
+    _exitAddress.dispose();
     super.dispose();
   }
 
@@ -121,6 +105,7 @@ class _StatecoinFundFormState extends State<StatecoinFundForm> {
         federationId: widget.fed.federationId,
         coinId: widget.coinId,
         fundingTxHex: _fundingTx.text.trim(),
+        exitAddress: _exitAddress.text.trim(),
       );
       if (!mounted) return;
       ToastService().show(
@@ -162,13 +147,24 @@ class _StatecoinFundFormState extends State<StatecoinFundForm> {
             enabled: !_funding,
             maxLines: 4,
           ),
-          ValueListenableBuilder(
-            valueListenable: _fundingTx,
+          const SizedBox(height: 16),
+          StatecoinTextField(
+            controller: _exitAddress,
+            label: context.l10n.statecoinExitAddress,
+            helper: context.l10n.statecoinExitAddressHint,
+            enabled: !_funding,
+          ),
+          ListenableBuilder(
+            listenable: Listenable.merge([_fundingTx, _exitAddress]),
             builder:
-                (context, value, _) => StatecoinActionButton(
+                (context, _) => StatecoinActionButton(
                   label: context.l10n.statecoinSignAndBroadcast,
                   busy: _funding,
-                  onPressed: value.text.trim().isEmpty ? null : _fund,
+                  onPressed:
+                      _fundingTx.text.trim().isEmpty ||
+                              _exitAddress.text.trim().isEmpty
+                          ? null
+                          : _fund,
                 ),
           ),
         ],
