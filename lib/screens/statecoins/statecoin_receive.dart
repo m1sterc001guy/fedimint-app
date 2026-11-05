@@ -16,7 +16,7 @@ class StatecoinReceiveSheet extends StatefulWidget {
 }
 
 class _StatecoinReceiveSheetState extends State<StatecoinReceiveSheet> {
-  final _exitAddress = TextEditingController(text: lastStatecoinExitAddress);
+  final _exitAddress = TextEditingController();
   String? _address;
   bool _creating = false;
 
@@ -35,7 +35,6 @@ class _StatecoinReceiveSheetState extends State<StatecoinReceiveSheet> {
         federationId: widget.fed.federationId,
         exitAddress: exitAddress,
       );
-      lastStatecoinExitAddress = exitAddress;
       if (!mounted) return;
       setState(() => _address = address);
     } catch (e) {

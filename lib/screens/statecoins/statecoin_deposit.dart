@@ -18,7 +18,7 @@ class StatecoinDepositSheet extends StatefulWidget {
 }
 
 class _StatecoinDepositSheetState extends State<StatecoinDepositSheet> {
-  final _exitAddress = TextEditingController(text: lastStatecoinExitAddress);
+  final _exitAddress = TextEditingController();
   StatecoinDeposit? _deposit;
   bool _creating = false;
 
@@ -37,7 +37,6 @@ class _StatecoinDepositSheetState extends State<StatecoinDepositSheet> {
         federationId: widget.fed.federationId,
         exitAddress: exitAddress,
       );
-      lastStatecoinExitAddress = exitAddress;
       if (!mounted) return;
       setState(() => _deposit = deposit);
     } catch (e) {

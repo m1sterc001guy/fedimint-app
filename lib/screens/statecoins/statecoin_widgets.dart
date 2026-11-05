@@ -8,10 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-/// The exit address last used in this session. Every statecoin needs one, so
-/// the next deposit or receive address starts with it filled in.
-String? lastStatecoinExitAddress;
-
 extension StatecoinStatusLabel on StatecoinStatus {
   String label(BuildContext context) => switch (this) {
     StatecoinStatus.keyGen => context.l10n.statecoinStatusKeyGen,
